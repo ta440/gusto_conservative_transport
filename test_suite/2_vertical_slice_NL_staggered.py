@@ -7,7 +7,7 @@ import numpy as np
 
 u"""
 Conservative Transport in Gusto:
-Test Case 1 
+Test Case 2
   
 This script implements a the test given in the 'Charney-Phillips trilemma'
 paper by Bendall, Wood, Thuburn, and Cotter. This considers a planar version of
@@ -30,8 +30,8 @@ There are two configurations that can be run:
   The 'consistency' configuration has an initial condition of a 
   constant mixing ratio and two Gaussian bumps for the density.
 
-This test will have the mixing ratio and dry density in the
-same function space, DG.
+This test will have the mixing ratio and dry density in staggered
+function spaces, with m_X in the theta space and rho_d in DG.
 
 """
 
@@ -52,15 +52,17 @@ columns = 200.  # number of columns
 dx = Lx/nlayers
 dz = Hz/columns
 
+# Define the order of the space:
+space_order = 1
+
 period_mesh = PeriodicIntervalMesh(columns, Lx)
 mesh = ExtrudedMesh(period_mesh, layers=nlayers, layer_height=Hz/nlayers)
-domain = Domain(mesh, dt, "CG", 1)
+domain = Domain(mesh, dt, "CG", space_order)
 x,z = SpatialCoordinate(mesh)
 
 # Choose spaces for the tracers
-# Use DG to collocate the density and mixing ratio
 rho_d_space = 'DG'
-m_X_space = 'DG'
+m_X_space = 'theta'
 
 V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
@@ -156,17 +158,42 @@ elif case == 'consistency':
 else:
   raise NotImplementedError('Specified case is not recognised.')
 
+# Specify options depending on the order of the space:
+if space_order == 0:
+    # Specify recovery options for both tracers
+    VCG1 = FunctionSpace(mesh, 'CG', 1)
+    VDG1 = domain.spaces('DG1_equispaced')    
+    
+    suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
+                                             recovered_space=VCG1,
+                                             project_low_method='recover',
+                                             boundary_method=BoundaryMethod.taylor),
+                  'm_X': RecoveryOptions(embedding_space=VDG1,
+                                             recovered_space=VCG1,
+                                             project_low_method='recover',
+                                             boundary_method=BoundaryMethod.taylor)
+                                             }
+
+elif space_order == 1:
+    # Specify EmbeddedDG options for m_X
+    suboptions = {'m_X': EmbeddedDGOptions()}
+else:
+    raise NotImplementedError('Higher-order spaces have not been'
+                              + 'implemented for this test case.')
+
+opts = MixedFSOptions(suboptions=suboptions)
+
 # Specify whether to apply limiters or not
-apply_limiter = True
+apply_limiter = False
 
 if apply_limiter:
-    sublimiters = {'m_X': DG1Limiter(V_m_X), 
-                   'rho_d': DG1Limiter(V_rho)}
+    sublimiters = {'m_X': ThetaLimiter(m_X_limiter_space), 
+                   'rho_d': DG1Limiter(rho_d_limiter_space)}
     MixedLimiter = MixedFSLimiter(eqn, sublimiters)
 
-    transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
+    transport_scheme = SSPRK3(domain, options = opts, limiter=MixedLimiter)
 else:
-    transport_scheme = SSPRK3(domain)
+    transport_scheme = SSPRK3(domain, options = opts)
 
 transport_methods = [DGUpwind(eqn, "m_X"), DGUpwind(eqn, "rho_d")]
     
