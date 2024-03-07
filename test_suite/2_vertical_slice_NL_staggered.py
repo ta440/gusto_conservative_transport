@@ -53,7 +53,7 @@ dx = Lx/nlayers
 dz = Hz/columns
 
 # Define the order of the space:
-space_order = 1
+space_order = 0
 
 period_mesh = PeriodicIntervalMesh(columns, Lx)
 mesh = ExtrudedMesh(period_mesh, layers=nlayers, layer_height=Hz/nlayers)
@@ -82,13 +82,16 @@ tracers = [m_X,rho_d]
 
 # Equation
 V = domain.spaces("HDiv")
-#eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
-# For now, to generate separate mass terms:
-eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+conservative = True
 
-# I/O
-dirname = "conservative_test_case_1_"+case
+if conservative:
+    eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_2_tracer_conservative_order_"+str(space_order)+"_"+case
+else:
+    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
+    
 
 # Dump the solution at each day
 dumpfreq = int(100./dt)

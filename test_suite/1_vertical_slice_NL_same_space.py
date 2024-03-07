@@ -80,13 +80,16 @@ tracers = [m_X,rho_d]
 
 # Equation
 V = domain.spaces("HDiv")
-#eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
-# For now, to generate separate mass terms:
-eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+# Specify whether or not to use conservative form.
+conservative = True
 
-# I/O
-dirname = "conservative_test_case_1_"+case
+if conservative:
+    eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_1_tracer_conservative_"+case
+else:
+    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_1_not_conservative_"+case
 
 # Dump the solution at each day
 dumpfreq = int(100./dt)
