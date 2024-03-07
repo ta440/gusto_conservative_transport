@@ -67,12 +67,20 @@ m_X_space = 'theta'
 V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
+# Specify whether or not to use conservative form for the tracers.
+conservative = True
+
 # Define the mixing ratio and density as tracers
-# Use conservative transport for the mixing ratio
-m_X = ActiveTracer(name='m_X', space=m_X_space,
-                 variable_type=TracerVariableType.mixing_ratio,
-                 transport_eqn=TransportEquationType.tracer_conservative,
-                 density_name='rho_d')
+
+if conservative:
+    m_X = ActiveTracer(name='m_X', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.tracer_conservative,
+                     density_name='rho_d')
+else:
+    m_X = ActiveTracer(name='m_X', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.advective)
                  
 rho_d = ActiveTracer(name='rho_d', space=rho_d_space,
                  variable_type=TracerVariableType.density,
@@ -82,8 +90,6 @@ tracers = [m_X,rho_d]
 
 # Equation
 V = domain.spaces("HDiv")
-
-conservative = True
 
 if conservative:
     eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)

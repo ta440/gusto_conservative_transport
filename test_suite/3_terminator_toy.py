@@ -20,7 +20,7 @@ X and X2. We want to test using conservative form
 for both of these mixing ratios.
 
 Both will tracers will use the dry density 
-as the reference density.
+as the reference density ???
 
 """
 
@@ -45,27 +45,52 @@ lamda, theta, _ = lonlatr_from_xyz(x[0], x[1], x[2])
 
 domain = Domain(mesh, dt, 'BDM', 1)
 
+rho_d_space = 'DG'
+m_X_space = 'DG'
+
+V_rho = domain.spaces(rho_d_space)
+V_m_X = domain.spaces(m_X_space)
+
+# Specify whether or not to use conservative form for the tracers.
+conservative = True
+
 # Define the dry density and the two species as tracers
 rho_d = ActiveTracer(name='rho_d', space='DG',
                  variable_type=TracerVariableType.density,
                  transport_eqn=TransportEquationType.conservative)
 
-X = ActiveTracer(name='X', space='DG',
-                 variable_type=TracerVariableType.mixing_ratio,
-                 transport_eqn=TransportEquationType.advective)
-
-X2 = ActiveTracer(name='X2', space='DG',
-                 variable_type=TracerVariableType.mixing_ratio,
-                 transport_eqn=TransportEquationType.advective)
+if conservative:
+    X = ActiveTracer(name='X', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.tracer_conservative,
+                     density_name='rho_d')
+    
+    X2 = ActiveTracer(name='X2', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.tracer_conservative,
+                     density_name='rho_d')
+else:
+    X = ActiveTracer(name='X', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.advective)
+    
+    X2 = ActiveTracer(name='X2', space=m_X_space,
+                     variable_type=TracerVariableType.mixing_ratio,
+                     transport_eqn=TransportEquationType.advective)
 
 tracers = [rho_d, X, X2]
 
 # Equation
 V = domain.spaces("HDiv")
-eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
-# I/O
-dirname = "terminator_toy"
+conservative = False
+
+if conservative:
+    eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_3_tracer_conservative_"
+else:
+    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+    dirname = "test_3_not_conservative_"
 
 # Dump the solution at each day
 dumpfreq = int(day/dt)
