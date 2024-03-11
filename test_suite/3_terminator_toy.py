@@ -7,7 +7,7 @@ import numpy as np
 
 u"""
 Conservative Transport in Gusto:
-Test Case 2
+Test Case 3
 
 This script runs the Laurtizen et al. (2015) Terminator Toy
 test case. This examines the interaction of two species

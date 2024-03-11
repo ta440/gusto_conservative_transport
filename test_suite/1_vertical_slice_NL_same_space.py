@@ -16,13 +16,16 @@ the Gaussian test case given by Nair and Laurtizen.
 This tests a coupled transport equation for moisture.
 
 The mixing ratio obeys an advective transport equation:
-∂/∂t (m_X) + (u.∇)m_X = 0
+∂/∂t (m_X) + (u.∇)m_X = 0 (1)
 
 Whereas the dry density obeys the conservative form:
-∂/∂t (ρ_d) + ∇.(ρ_d*u) = 0
+∂/∂t (ρ_d) + ∇.(ρ_d*u) = 0 (2)
 
 In this script we test the ability to transport both of these variables
 in a conservative manner. 
+
+This means solving the following transport equation in place of (1),
+∂/∂t (ρ_d*m_X) + ∇.(ρ_d*m_X*u) = 0 (3)
 
 There are two configurations that can be run:
   The 'convergence' configuration has an initial condition of a linearly 
@@ -36,7 +39,7 @@ same function space, DG.
 """
 
 # Specify whether to run the 'convergence' or 'consistency' version of the test.
-case = 'convergence'
+case = 'consistency'
 
 # Domain
 Lx = 2000.
@@ -66,7 +69,7 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = True
+conservative = False
 
 # Define the mixing ratio and density as tracers
 
