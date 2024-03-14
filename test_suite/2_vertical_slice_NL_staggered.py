@@ -1,7 +1,7 @@
 from gusto import *
 from firedrake import PeriodicIntervalMesh, ExtrudedMesh, Constant, ge, le, exp, cos, \
     sin, conditional, interpolate, SpatialCoordinate, VectorFunctionSpace, \
-    Function, assemble, dx, FunctionSpace, pi, min_value, acos, as_vector
+    Function, assemble, dx, FunctionSpace, pi, min_value, acos, as_vector, BrokenElement
 
 import numpy as np
 
@@ -46,14 +46,14 @@ Hz = 2000.
 dt = 2.
 tmax = 2000.
 
-nlayers = 200.  # horizontal layers
-columns = 200.  # number of columns
+nlayers = 100.  # horizontal layers
+columns = 100.  # number of columns
 
 dx = Lx/nlayers
 dz = Hz/columns
 
 # Define the order of the space:
-space_order = 0
+space_order = 1
 
 period_mesh = PeriodicIntervalMesh(columns, Lx)
 mesh = ExtrudedMesh(period_mesh, layers=nlayers, layer_height=Hz/nlayers)
@@ -185,7 +185,16 @@ if space_order == 0:
 
 elif space_order == 1:
     # Specify EmbeddedDG options for m_X
-    suboptions = {'m_X': EmbeddedDGOptions()}
+    # Use Recovery for rho_d so that these are
+    # transported in the same space.
+    # Which is Vt_brok
+    Vt_brok = FunctionSpace(mesh, BrokenElement(V_m_X.ufl_element()))
+    VCG2 = FunctionSpace(mesh, 'CG', 2)
+    suboptions = {'rho_d':RecoveryOptions(embedding_space=Vt_brok,
+                                          recovered_space=VCG2,
+                                          project_low_method='recover',
+                                          boundary_method=BoundaryMethod.taylor),
+                  'm_X': EmbeddedDGOptions()}
 else:
     raise NotImplementedError('Higher-order spaces have not been'
                               + 'implemented for this test case.')
@@ -195,14 +204,18 @@ opts = MixedFSOptions(suboptions=suboptions)
 # Specify whether to apply limiters or not
 apply_limiter = False
 
-if apply_limiter:
-    sublimiters = {'m_X': ThetaLimiter(m_X_limiter_space), 
-                   'rho_d': DG1Limiter(rho_d_limiter_space)}
+if conservative:
+    # Use the mass-weighted evaluations for timestepping.
+    transport_scheme = SSPRK3(domain, increment_form=False)
+elif apply_limiter:
+    sublimiters = {'m_X': DG1Limiter(V_m_X), 
+                   'rho_d': DG1Limiter(V_rho)}
     MixedLimiter = MixedFSLimiter(eqn, sublimiters)
 
-    transport_scheme = SSPRK3(domain, options = opts, limiter=MixedLimiter)
+    transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
 else:
-    transport_scheme = SSPRK3(domain, options = opts)
+    transport_scheme = SSPRK3(domain)
+
 
 transport_methods = [DGUpwind(eqn, "m_X"), DGUpwind(eqn, "rho_d")]
     

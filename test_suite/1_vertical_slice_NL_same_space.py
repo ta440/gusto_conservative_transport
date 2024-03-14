@@ -39,7 +39,7 @@ same function space, DG.
 """
 
 # Specify whether to run the 'convergence' or 'consistency' version of the test.
-case = 'consistency'
+case = 'convergence'
 
 # Domain
 Lx = 2000.
@@ -49,8 +49,8 @@ Hz = 2000.
 dt = 2.
 tmax = 2000.
 
-nlayers = 200.  # horizontal layers
-columns = 200.  # number of columns
+nlayers = 100.  # horizontal layers
+columns = 100.  # number of columns
 
 dx = Lx/nlayers
 dz = Hz/columns
@@ -167,10 +167,14 @@ elif case == 'consistency':
 else:
   raise NotImplementedError('Specified case is not recognised.')
 
-# Specify whether to apply limiters or not
-apply_limiter = True
+# This is just for the 'reference' solution
+# with advective form transport
+apply_limiter = False
 
-if apply_limiter:
+if conservative:
+    # Use the mass-weighted evaluations for timestepping.
+    transport_scheme = SSPRK3(domain, increment_form=False)
+elif apply_limiter:
     sublimiters = {'m_X': DG1Limiter(V_m_X), 
                    'rho_d': DG1Limiter(V_rho)}
     MixedLimiter = MixedFSLimiter(eqn, sublimiters)

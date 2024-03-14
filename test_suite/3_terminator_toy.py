@@ -19,8 +19,6 @@ There is a dry density, rho_d, and two mixing ratios,
 X and X2. We want to test using conservative form
 for both of these mixing ratios.
 
-Both will tracers will use the dry density 
-as the reference density ???
 
 """
 
@@ -34,9 +32,12 @@ tmax = 12*day # this is 1036800s
 # Radius of the Earth
 R = 6371220.
 
+ref_level = 3
+
 # Domain
 mesh = IcosahedralSphereMesh(radius=R,
-                             refinement_level=3, degree=2)
+                             refinement_level=ref_level,
+                             degree=2)
 
 x = SpatialCoordinate(mesh)
 
@@ -82,8 +83,6 @@ tracers = [rho_d, X, X2]
 
 # Equation
 V = domain.spaces("HDiv")
-
-conservative = False
 
 if conservative:
     eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
@@ -167,12 +166,22 @@ def u_t(t):
 
   return u_expr
 
-# Define limiters for the interacting species
-limiter_space = domain.spaces('DG')
-sublimiters = {'X': DG1Limiter(limiter_space), 'X2': DG1Limiter(limiter_space)}
-MixedLimiter = MixedFSLimiter(eqn, sublimiters)
+# This is just for the 'reference' solution
+# with advective form transport
+apply_limiter = False
 
-transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
+if conservative:
+    # Use the mass-weighted evaluations for timestepping.
+    transport_scheme = SSPRK3(domain, increment_form=False)
+elif apply_limiter:
+    limiter_space = domain.spaces('DG')
+    sublimiters = {'X': DG1Limiter(limiter_space), 
+                   'X2': DG1Limiter(limiter_space)}
+    MixedLimiter = MixedFSLimiter(eqn, sublimiters)
+    transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
+else:
+    transport_scheme = SSPRK3(domain)
+
 transport_method = [DGUpwind(eqn, 'rho_d'), DGUpwind(eqn, 'X'), DGUpwind(eqn, 'X2')]
 
 # Timstepper that solves the physics separately to the dynamics
