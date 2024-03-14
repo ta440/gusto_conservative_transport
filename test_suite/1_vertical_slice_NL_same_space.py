@@ -69,7 +69,7 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = False
+conservative = True
 
 # Define the mixing ratio and density as tracers
 
