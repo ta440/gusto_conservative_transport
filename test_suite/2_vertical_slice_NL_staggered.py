@@ -68,7 +68,7 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = True
+conservative = False
 
 # Define the mixing ratio and density as tracers
 
@@ -91,11 +91,11 @@ tracers = [m_X,rho_d]
 # Equation
 V = domain.spaces("HDiv")
 
+eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+
 if conservative:
-    eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
     dirname = "test_2_tracer_conservative_order_"+str(space_order)+"_"+case
 else:
-    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
     dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
     
 
@@ -185,15 +185,12 @@ if space_order == 0:
 
 elif space_order == 1:
     # Specify EmbeddedDG options for m_X
-    # Use Recovery for rho_d so that these are
-    # transported in the same space.
-    # Which is Vt_brok
+    # Use Recovery for rho_d so that both variables
+    # use the same embedding and recovered spaces.
     Vt_brok = FunctionSpace(mesh, BrokenElement(V_m_X.ufl_element()))
-    VCG2 = FunctionSpace(mesh, 'CG', 2)
     suboptions = {'rho_d':RecoveryOptions(embedding_space=Vt_brok,
-                                          recovered_space=VCG2,
-                                          project_low_method='recover',
-                                          boundary_method=BoundaryMethod.taylor),
+                                          recovered_space=V_m_X,
+                                          project_low_method='recover'),
                   'm_X': EmbeddedDGOptions()}
 else:
     raise NotImplementedError('Higher-order spaces have not been'
@@ -206,15 +203,15 @@ apply_limiter = False
 
 if conservative:
     # Use the mass-weighted evaluations for timestepping.
-    transport_scheme = SSPRK3(domain, increment_form=False)
+    transport_scheme = SSPRK3(domain, options=opts, increment_form=False)
 elif apply_limiter:
     sublimiters = {'m_X': DG1Limiter(V_m_X), 
                    'rho_d': DG1Limiter(V_rho)}
     MixedLimiter = MixedFSLimiter(eqn, sublimiters)
 
-    transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
+    transport_scheme = SSPRK3(domain, options=opts, limiter=MixedLimiter)
 else:
-    transport_scheme = SSPRK3(domain)
+    transport_scheme = SSPRK3(domain, options=opts)
 
 
 transport_methods = [DGUpwind(eqn, "m_X"), DGUpwind(eqn, "rho_d")]

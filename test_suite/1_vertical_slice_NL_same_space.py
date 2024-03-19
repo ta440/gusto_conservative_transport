@@ -92,11 +92,11 @@ tracers = [m_X,rho_d]
 # Equation
 V = domain.spaces("HDiv")
 
+eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
+
 if conservative:
-    eqn = ConservativeCoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
     dirname = "test_1_tracer_conservative_"+case
 else:
-    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
     dirname = "test_1_not_conservative_"+case
 
 # Dump the solution at each day
