@@ -6,7 +6,18 @@ The moist rising bubble test from Bryan & Fritsch (2002), in a cloudy
 atmosphere.
 
 The rise of the thermal is fueled by latent heating from condensation.
-These use the compressible Euler equations.
+These use the compressible Euler equations. We additionally define
+transport equations for water vapour (w_v) and cloud water (c_w).
+When these are defined conservatively, we have the following five equations:
+
+∂u/∂t + (u.∇)u + 2Ω×u + c_p*θ*∇Π + g = 0,                                 
+∂ρ/∂t + ∇.(ρ*u) = 0,                                                      
+∂θ/∂t + (u.∇)θ = 0,                                                       
+∂(ρ*w_v)/∂t + ∇.(ρ*w_v*u) = 0, 
+∂(ρ*c_w)/∂t + ∇.(ρ*c_w*u) = 0.
+
+where Π is the Exner pressure, g is the gravitational vector, Ω is the
+planet's rotation vector and c_p is the heat capacity of dry air at constant
 
 """
 
@@ -29,7 +40,7 @@ L = 10000.
 H = 10000.
 
 deltax = 200
-tmax = 100.#1000.
+tmax = 1000.
 
 # ---------------------------------------------------------------------------- #
 # Set up model objects
@@ -50,8 +61,8 @@ params = CompressibleParameters()
 # Choose whether to use conservative transport
 conservative=True
 
-
 # By default, water and clour vapour are in theta.
+# Rho is in L2.
 if conservative:
     tracers = [WaterVapour(transport_eqn=TransportEquationType.tracer_conservative,
                            density_name='rho'),
@@ -62,34 +73,53 @@ else:
 
 eqns = CompressibleEulerEquations(domain, params, active_tracers=tracers)
 
-# Choose whether to use 
-
 # I/O
 if conservative:
-    dirname = 'test_4_conservative_'
+    dirname = 'test_4_conservative'
 else:
-    dirname = 'test_4_not_conservative_'
+    dirname = 'test_4_not_conservative'
 
-dumpfreq = int(tmax/(5.*dt))
+dumpfreq = int(tmax/(10.*dt))
 
 # Set dump_nc = True to use tomplot.
 output = OutputParameters(dirname=dirname,
                           dumpfreq = dumpfreq,
                           dump_nc = True,
                           dump_vtus = False)
-                          
-                          
-diagnostic_fields = [Theta_e(eqns)]
+
+diagnostic_fields = [Theta_e(eqns), \
+                     TracerDensity('water_vapour', 'rho'),
+                     TracerDensity('cloud_water', 'rho')]
+
 io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
 # Transport schemes
 # Use Recovery for rho to have it embedded in the same spaces, also?
 # rho is in L2, u is in H(div)
-transported_fields = [SSPRK3(domain, "rho"),
-                      SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
-                      SSPRK3(domain, "water_vapour", options=EmbeddedDGOptions()),
-                      SSPRK3(domain, "cloud_water", options=EmbeddedDGOptions()),
-                      TrapeziumRule(domain, "u")]
+
+# Use increment_form for any explicit multistage timestepping
+# for conservative transport of tracers.
+
+                                                   
+suboptions = {'water_vapour': EmbeddedDGOptions(),
+              'cloud_water': EmbeddedDGOptions()}
+mixed_opts = MixedFSOptions(suboptions=suboptions)
+                          
+if conservative:
+    #transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"]),
+    #                      SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
+    #                      TrapeziumRule(domain, "u")]      
+    transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, increment_form=False),
+                          SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
+                          TrapeziumRule(domain, "u")]                         
+                          
+                          
+else:
+    transported_fields = [SSPRK3(domain, "rho"),
+                          SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
+                          SSPRK3(domain, "water_vapour", options=EmbeddedDGOptions()),
+                          SSPRK3(domain, "cloud_water", options=EmbeddedDGOptions()),
+                          TrapeziumRule(domain, "u")]
 
 transport_methods = [DGUpwind(eqns, field) for field in ["u", "rho", "theta", "water_vapour", "cloud_water"]]
 

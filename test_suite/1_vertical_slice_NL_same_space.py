@@ -95,9 +95,10 @@ V = domain.spaces("HDiv")
 eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
 if conservative:
-    dirname = "test_1_tracer_conservative_"+case
+    #dirname = "test_1_tracer_conservative_"+case
+    dirname = "test_1_conservative_morediagtest_"+case
 else:
-    dirname = "test_1_not_conservative_"+case
+    dirname = "test_1_not_conservative_newdiag_"+case
 
 # Dump the solution at each day
 dumpfreq = int(100./dt)

@@ -53,7 +53,7 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = True
+conservative = False
 
 # Define the dry density and the two species as tracers
 rho_d = ActiveTracer(name='rho_d', space='DG',
@@ -89,7 +89,7 @@ eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 if conservative:
     dirname = "test_3_tracer_conservative_"
 else:
-    dirname = "test_3_not_conservative_"
+    dirname = "test_3_not_conservative_newdiag_ttt"
 
 # Dump the solution at each day
 dumpfreq = int(day/dt)
@@ -101,11 +101,20 @@ output = OutputParameters(dirname=dirname,
                           dump_vtus = True)     
 
 # Define intermediate sums to be able to use the TracerDensity diagnostic
-X_plus_X2 = Sum('X', 'X2')
-X_plus_X2_plus_X2 = Sum('X_plus_X2', 'X2')
-tracer_diagnostic = TracerDensity('X_plus_X2_plus_X2', 'rho_d')
+#X_plus_X2 = Sum('X', 'X2')
+#X_plus_X2_plus_X2 = Sum('X_plus_X2', 'X2')
+#tracer_diagnostic = TracerDensity('X_plus_X2_plus_X2', 'rho_d')
+#tracer_diagnostic = TracerDensity(eqn, 'X_plus_X2_plus_X2', 'rho_d')
 
-io = IO(domain, output, diagnostic_fields = [X_plus_X2, X_plus_X2_plus_X2, tracer_diagnostic])
+#io = IO(domain, output, diagnostic_fields = [X_plus_X2, X_plus_X2_plus_X2, tracer_diagnostic])
+
+# A hack for now ... 
+X_mass = TracerDensity('X', 'rho_d')
+X2_mass = TracerDensity('X2', 'rho_d')
+#X_mass_plus_X2_mass = Sum('X_mass', 'X2_mass')
+#X_mass_plus_X2_mass_plus_X2_mass = Sum('X_mass_plus_X2_mass', 'X2_mass')
+
+io = IO(domain, output, diagnostic_fields = [X_mass, X2_mass])
 
 # Define the reaction rates:
 theta_c = np.pi/9.

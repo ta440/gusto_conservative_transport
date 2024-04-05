@@ -53,7 +53,7 @@ dx = Lx/nlayers
 dz = Hz/columns
 
 # Define the order of the space:
-space_order = 1
+space_order = 0
 
 period_mesh = PeriodicIntervalMesh(columns, Lx)
 mesh = ExtrudedMesh(period_mesh, layers=nlayers, layer_height=Hz/nlayers)
@@ -94,9 +94,11 @@ V = domain.spaces("HDiv")
 eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
 if conservative:
-    dirname = "test_2_tracer_conservative_order_"+str(space_order)+"_"+case
+    #dirname = "test_2_tracer_conservative_order_"+str(space_order)+"_"+case
+    dirname = "test_2_conservative_newdiag_order_"+str(space_order)+"_"+case
 else:
-    dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
+    #dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
+    dirname = "test_2_not_conservative_newdiag_order_"+str(space_order)+"_"+case
     
 
 # Dump the solution at each day
