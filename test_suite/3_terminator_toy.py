@@ -46,6 +46,8 @@ lamda, theta, _ = lonlatr_from_xyz(x[0], x[1], x[2])
 
 domain = Domain(mesh, dt, 'BDM', 1)
 
+# Make this be in the same space or different spaces
+
 rho_d_space = 'DG'
 m_X_space = 'DG'
 
@@ -53,10 +55,10 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = False
+conservative = True
 
 # Define the dry density and the two species as tracers
-rho_d = ActiveTracer(name='rho_d', space='DG',
+rho_d = ActiveTracer(name='rho_d', space=rho_d_space,
                  variable_type=TracerVariableType.density,
                  transport_eqn=TransportEquationType.conservative)
 
@@ -87,9 +89,9 @@ V = domain.spaces("HDiv")
 eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
 if conservative:
-    dirname = "test_3_tracer_conservative_"
+    dirname = "test_3_conservative"
 else:
-    dirname = "test_3_not_conservative_newdiag_ttt"
+    dirname = "test_3_not_conservative_io"
 
 # Dump the solution at each day
 dumpfreq = int(day/dt)

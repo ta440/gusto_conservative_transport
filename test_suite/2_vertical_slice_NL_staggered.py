@@ -68,7 +68,7 @@ V_rho = domain.spaces(rho_d_space)
 V_m_X = domain.spaces(m_X_space)
 
 # Specify whether or not to use conservative form for the tracers.
-conservative = False
+conservative = True
 
 # Define the mixing ratio and density as tracers
 
@@ -95,10 +95,10 @@ eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
 if conservative:
     #dirname = "test_2_tracer_conservative_order_"+str(space_order)+"_"+case
-    dirname = "test_2_conservative_newdiag_order_"+str(space_order)+"_"+case
+    dirname = "test_2_conservative_trest_order_"+str(space_order)+"_"+case
 else:
     #dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
-    dirname = "test_2_not_conservative_newdiag_order_"+str(space_order)+"_"+case
+    dirname = "test_2_not_conservative_order_"+str(space_order)+"_"+case
     
 
 # Dump the solution at each day

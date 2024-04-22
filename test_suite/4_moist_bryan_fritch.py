@@ -106,10 +106,8 @@ suboptions = {'water_vapour': EmbeddedDGOptions(),
 mixed_opts = MixedFSOptions(suboptions=suboptions)
                           
 if conservative:
-    #transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"]),
-    #                      SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
-    #                      TrapeziumRule(domain, "u")]      
-    transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, increment_form=False),
+    transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], increment_form=False),     
+    #transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, increment_form=False),
                           SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
                           TrapeziumRule(domain, "u")]                         
                           
