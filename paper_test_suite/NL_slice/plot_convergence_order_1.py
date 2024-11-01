@@ -12,15 +12,18 @@ import numpy as np
 
 order = 1
 configuration = 'convergence'
-error_type = 'l2' # l2 or total
-quantity = 'm_X' # tracer_density or m_X
+quantity = 'tracer_density' # tracer_density or m_X
+
+# Tracer density will be the total and m_X is the L2 of stead state error
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
 plot_dir = f'{abspath(dirname(__file__))}/figures'
-plot_name = f'{plot_dir}/NL_slice_order_1_convergence_{quantity}_{error_type}.png'
-
+if quantity == 'm_X':
+    plot_name = f'{plot_dir}/NL_slice_ord_1_conv_m_l2sse.png'
+else:
+    plot_name = f'{plot_dir}/NL_slice_ord_1_conv_Td_diff.png'
 conservative = []
 advective = []
 
@@ -41,7 +44,7 @@ for dxz in dxzs:
     
         rho_X = nc.groups['TracerDensity_m_X_rho_d']
         
-        T_d = rho_X.variables[error_type][:]
+        T_d = rho_X.variables['total'][:]
         
         # Compute the relative change in rho_X:
         T_d_diff = np.abs(T_d[-1] - T_d[0])/T_d[0]
@@ -49,8 +52,8 @@ for dxz in dxzs:
         conservative.append(T_d_diff)
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
-        m_err_end = m_err.variables[error_type][:]
-        conservative.append(np.abs(m_err_end[-1]))
+        m_err_l2 = m_err.variables['l2'][:]
+        conservative.append(np.abs(m_err_l2[-1]))
     else:
         raise ValueError('Not correct inputs')
 
@@ -65,7 +68,7 @@ for dxz in dxzs:
     
         rho_X = nc.groups['TracerDensity_m_X_rho_d']
         
-        T_d = rho_X.variables[error_type][:]
+        T_d = rho_X.variables['total'][:]
         
         # Compute the relative change in rho_X:
         T_d_diff = np.abs(T_d[-1] - T_d[0])/T_d[0]
@@ -73,8 +76,8 @@ for dxz in dxzs:
         advective.append(T_d_diff)
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
-        m_err_end = m_err.variables[error_type][:]
-        advective.append(np.abs(m_err_end[-1]))
+        m_err_l2 = m_err.variables['l2'][:]
+        advective.append(np.abs(m_err_l2[-1]))
     else:
         raise ValueError('Not correct inputs')
     
@@ -89,7 +92,7 @@ print(all_error_data)
 
 log_by = 'data'
 xlabel = r"$log(\Delta x)$"
-if quantity = 'Tracer_Density':
+if quantity == 'tracer_density':
     ylabel = r"$log((T_d(T_{end}) - T_d(0))/T_d(0))$"
 else:
     ylabel = "$log(||m(T_{end}) - m(0)||/||m(0)||$"

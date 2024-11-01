@@ -131,7 +131,6 @@ def NL_slice(
     io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
     # Details of transport
-    transport_scheme = SSPRK3(domain)
     transport_methods = [DGUpwind(eqn, "m_X"), DGUpwind(eqn, "rho_d")]
     
     # Specify options depending on the order of the space:
@@ -186,9 +185,9 @@ def NL_slice(
     opts = MixedFSOptions(suboptions=suboptions)
     
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, options=opts, increment_form=False)
-    else:
         transport_scheme = SSPRK3(domain, options=opts)
+    else:
+        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.increment)
     
     
     time_varying_velocity = True
