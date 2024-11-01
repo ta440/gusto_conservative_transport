@@ -12,7 +12,7 @@ import numpy as np
 
 order = 1
 configuration = 'convergence'
-error_type = 'total' # l2 or total
+error_type = 'l2' # l2 or total
 quantity = 'm_X' # tracer_density or m_X
 
 # ---------------------------------------------------------------------------- #
@@ -89,11 +89,12 @@ print(all_error_data)
 
 log_by = 'data'
 xlabel = r"$log(\Delta x)$"
-ylabel = r"$log((T_d(T_{end}) - T_d(0))/T_d(0))$"
-    
+if quantity = 'Tracer_Density':
+    ylabel = r"$log((T_d(T_{end}) - T_d(0))/T_d(0))$"
+else:
+    ylabel = "$log(||m(T_{end}) - m(0)||/||m(0)||$"
 set_tomplot_style()
-fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    
+fig, ax = plt.subplots(1, 1, figsize=(5, 5)) 
 for error_data, colour, marker, label in \
         zip(all_error_data, colours, markers, labels):
     plot_convergence(ax, dx_values, error_data, label=label,
