@@ -75,7 +75,7 @@ eqns = CompressibleEulerEquations(domain, params, active_tracers=tracers)
 
 # I/O
 if conservative:
-    dirname = 'test_4_conservative'
+    dirname = 'test_4_conservative_mixed_opts'
 else:
     dirname = 'test_4_not_conservative'
 
@@ -106,8 +106,8 @@ suboptions = {'water_vapour': EmbeddedDGOptions(),
 mixed_opts = MixedFSOptions(suboptions=suboptions)
                           
 if conservative:
-    transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], increment_form=False),     
-    #transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, increment_form=False),
+    #transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], increment_form=False),     
+    transported_fields = [SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, rk_formulation=RungeKuttaFormulation.predictor),
                           SSPRK3(domain, "theta", options=EmbeddedDGOptions()),
                           TrapeziumRule(domain, "u")]                         
                           

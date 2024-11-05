@@ -175,7 +175,7 @@ apply_limiter = False
 
 if conservative:
     # Use the mass-weighted evaluations for timestepping.
-    transport_scheme = SSPRK3(domain, increment_form=False)
+    transport_scheme = SSPRK3(domain, rk_formulation=RungeKuttaFormulation.predictor)
 elif apply_limiter:
     sublimiters = {'m_X': DG1Limiter(V_m_X), 
                    'rho_d': DG1Limiter(V_rho)}
