@@ -2,7 +2,7 @@
 
 A test for the Conservative Transport in Gusto paper (Tim and Tom):
 
-'NL_slice'.
+'bryan_fritsch'.
 
 The moist rising bubble test from Bryan & Fritsch, 2002:
 ``A Benchmark Simulation for Moist Nonhydrostatic Numerical Models'', GMD.
