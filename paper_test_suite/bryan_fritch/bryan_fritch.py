@@ -98,6 +98,13 @@ def moist_bryan_fritsch(
         domain, params, active_tracers=tracers, u_transport_option=u_eqn_type)
 
     # I/O
+    if conservative_transport:
+        transport_type='conservative'
+    else:
+        transport_type='advective'
+    
+    dirname = 'bryan_fritsch_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
+    
     output = OutputParameters(
         dirname=dirname, dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
     )
@@ -308,12 +315,6 @@ if __name__ == "__main__":
         help="The frequency at which to dump field output.",
         type=int,
         default=moist_bryan_fritsch_defaults['dumpfreq']
-    )
-    parser.add_argument(
-        '--dirname',
-        help="The name of the directory to write to.",
-        type=str,
-        default=moist_bryan_fritsch_defaults['dirname']
     )
     args, unknown = parser.parse_known_args()
 
