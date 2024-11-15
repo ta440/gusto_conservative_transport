@@ -23,31 +23,30 @@ from firedrake import (
     PeriodicIntervalMesh, ExtrudedMesh, SpatialCoordinate, conditional, cos, pi,
     sqrt, NonlinearVariationalProblem, NonlinearVariationalSolver, TestFunction,
     dx, TrialFunction, Function, as_vector, LinearVariationalProblem,
-    LinearVariationalSolver, Constant
+    LinearVariationalSolver, Constant, BrokenElement
 )
 
 from gusto import *
 
 moist_bryan_fritsch_defaults = {
-    'order': 1,
+    'conservative_transport': False, # Whether to use conservative transport
+    'order': 1, # Order of the finite elements
     'ncolumns': 50,
     'nlayers': 50,
     'dt': 2.0,
     'tmax': 1000.0,
-    'dumpfreq': 125,
-    'dirname': 'moist_bryan_fritsch'
+    'dumpfreq': 125
 }
 
 
 def moist_bryan_fritsch(
-        conservative_transport=NL_slice_defaults['conservative_transport'],
-        order=moist_bryan_fritsch_defaults['order']
+        conservative_transport=moist_bryan_fritsch_defaults['conservative_transport'],
+        order=moist_bryan_fritsch_defaults['order'],
         ncolumns=moist_bryan_fritsch_defaults['ncolumns'],
         nlayers=moist_bryan_fritsch_defaults['nlayers'],
         dt=moist_bryan_fritsch_defaults['dt'],
         tmax=moist_bryan_fritsch_defaults['tmax'],
-        dumpfreq=moist_bryan_fritsch_defaults['dumpfreq'],
-        dirname=moist_bryan_fritsch_defaults['dirname']
+        dumpfreq=moist_bryan_fritsch_defaults['dumpfreq']
 ):
 
     # ------------------------------------------------------------------------ #
@@ -100,10 +99,12 @@ def moist_bryan_fritsch(
     # I/O
     if conservative_transport:
         transport_type='conservative'
+        print('Using conservative transport for the tracers')
     else:
         transport_type='advective'
+        print('Not using conservative transport for the tracers')
     
-    dirname = 'bryan_fritsch_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
+    dirname = 'bryan_fritsch_'+transport_type+'_order_'+str(order)
     
     output = OutputParameters(
         dirname=dirname, dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
@@ -123,30 +124,50 @@ def moist_bryan_fritsch(
                                  boundary_method=BoundaryMethod.taylor)
         theta_opts = RecoveryOptions(embedding_space=VDG1,
                                      recovered_space=VCG1)
-        suboptions = {'rho': RecoveryOptions(embedding_space=VDG1,
-                                             recovered_space=VCG1,
-                                             boundary_method=BoundaryMethod.taylor),
-                      'water_vapour': ConservativeRecoveryOptions(embedding_space=VDG1,
-                                                                  recovered_space=VCG1,
-                                                                  rho_name="rho",
-                                                                  orig_rho_space=V_rho),
-                      'cloud_water': ConservativeRecoveryOptions(embedding_space=VDG1,
-                                                                 recovered_space=VCG1,
-                                                                 rho_name="rho",
-                                                                 orig_rho_space=V_rho)}
+
+        if conservative_transport:
+            suboptions = {'rho': RecoveryOptions(embedding_space=VDG1,
+                                                recovered_space=VCG1,
+                                                boundary_method=BoundaryMethod.taylor),
+                        'water_vapour': ConservativeRecoveryOptions(embedding_space=VDG1,
+                                                                    recovered_space=VCG1,
+                                                                    rho_name="rho",
+                                                                    orig_rho_space=V_rho),
+                        'cloud_water': ConservativeRecoveryOptions(embedding_space=VDG1,
+                                                                    recovered_space=VCG1,
+                                                                    rho_name="rho",
+                                                                    orig_rho_space=V_rho)}
+        else:
+            rho_opts = RecoveryOptions(embedding_space=VDG1,
+                                       recovered_space=VCG1,
+                                       boundary_method=BoundaryMethod.taylor)
+            wv_opts = RecoveryOptions(embedding_space=VDG1,
+                                      recovered_space=VCG1)
+            wc_opts = RecoveryOptions(embedding_space=VDG1,
+                                      recovered_space=VCG1)
     else:
         theta_opts = EmbeddedDGOptions()
-        Vt_brok = FunctionSpace(mesh, BrokenElement(V_theta.ufl_element()))
-        suboptions = {'rho': EmbeddedDGOptions(embedding_space=Vt_brok),
-                      'water_vapour': ConservativeEmbeddedDGOptions(rho_name="rho",
-                                                                    orig_rho_space=V_rho),
-                      'cloud_water': ConservativeEmbeddedDGOptions(rho_name="rho",
-                                                                   orig_rho_space=V_rho)}
+        if conservative_transport:
+            Vt_brok = FunctionSpace(mesh, BrokenElement(V_theta.ufl_element()))
+            suboptions = {'rho': EmbeddedDGOptions(embedding_space=Vt_brok),
+                        'water_vapour': ConservativeEmbeddedDGOptions(rho_name="rho",
+                                                                        orig_rho_space=V_rho),
+                        'cloud_water': ConservativeEmbeddedDGOptions(rho_name="rho",
+                                                                    orig_rho_space=V_rho)}
+        else:
+            rho_opts = None
+            wv_opts = EmbeddedDGOptions()
+            wc_opts = EmbeddedDGOptions()
 
-    mixed_opts = MixedFSOptions(suboptions=suboptions)
-
-    transported_fields = [SSPRK3(domain, "theta", options=theta_opts),
-                          SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, rk_formulation=RungeKuttaFormulation.predictor)]
+    transported_fields = [SSPRK3(domain, "theta", options=theta_opts)]
+    
+    if conservative_transport:
+        mixed_opts = MixedFSOptions(suboptions=suboptions)
+        transported_fields.append(SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, rk_formulation=RungeKuttaFormulation.predictor))
+    else:
+        transported_fields.append(SSPRK3(domain, 'rho', options=rho_opts))
+        transported_fields.append(SSPRK3(domain, 'water_vapour', options=wv_opts))
+        transported_fields.append(SSPRK3(domain, 'cloud_water', options=wc_opts))
 
     if order == 0:
         transported_fields.append(SSPRK3(domain, 'u', options=u_opts))
@@ -278,7 +299,7 @@ if __name__ == "__main__":
         '--conservative_transport',
         help="Whether to apply conservative transport or not",
         type=bool,
-        default=NL_slice_defaults['conservative_transport']
+        default=moist_bryan_fritsch_defaults['conservative_transport']
     )
     parser.add_argument(
         '--order',
