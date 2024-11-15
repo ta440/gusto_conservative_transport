@@ -14,10 +14,10 @@ from tomplot import (
     extract_gusto_field
 )
 
-order = 0
+order = 1
 
-test1 = 'bryan_fritsch_advective_order_0'
-test2 = 'bryan_fritsch_conservative_order_0'
+test1 = 'bryan_fritsch_advective_order_1'
+test2 = 'bryan_fritsch_conservative_order_1'
 
 results_file_name1 = f'{abspath(dirname(__file__))}/results/{test1}/field_output.nc'
 results_file_name2 = f'{abspath(dirname(__file__))}/results/{test2}/field_output.nc'
@@ -28,17 +28,27 @@ plot_dir = f'{abspath(dirname(__file__))}/figures'
 # Plot details
 # ---------------------------------------------------------------------------- #
 # Time index to compare at
-t_idx = 4.
+t_idx = 3.
+field = 'water_vapour'
 
-field_names = ['Theta_e', 'Theta_e']
+field_names = [field, field]
 time_idxs = [t_idx, t_idx]
 cbars = [True, True]
 
 # ---------------------------------------------------------------------------- #
 # General options
 # ---------------------------------------------------------------------------- #
-contours = np.linspace(315.0, 325.0, 21)
-remove_contour = 320.0
+if field == 'theta':
+    contours = np.linspace(290,330,21)
+elif field == 'rho':
+    contours = np.linspace(0.4,1.2,21)
+elif field == 'theta_e':
+    contours = np.linspace(315.0, 325.0, 21)
+elif field == 'cloud_water':
+    contours = np.linspace(0.01,0.02,21)
+elif field == 'water_vapour':
+    contours = np.linspace(0.0,0.01,21)
+remove_contour = None#320.0
 colour_scheme = 'RdBu_r'
 field_label = r'$\theta_e$ (K)'
 contour_method = 'tricontour'
@@ -106,7 +116,7 @@ for i, (ax, time_idx, field_name, cbar) in \
 
 # Save figure ------------------------------------------------------------------
 
-plot_name= f'{plot_dir}/bubble_comp_order'+str(order)+'_t'+str(time)+'s.png'
+plot_name= f'{plot_dir}/bubble_comp_order'+str(order)+'_t'+str(time)+'s_'+field+'.png'
 fig.subplots_adjust(wspace=0.15)
 print(f'Saving figure to {plot_name}')
 fig.savefig(plot_name, bbox_inches='tight')
