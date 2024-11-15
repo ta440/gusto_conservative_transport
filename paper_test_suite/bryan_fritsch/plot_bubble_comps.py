@@ -14,8 +14,10 @@ from tomplot import (
     extract_gusto_field
 )
 
-test1 = 'bryan_fritsch_advective_order_1'
-test2 = 'bryan_fritsch_conservative_order_1'
+order = 0
+
+test1 = 'bryan_fritsch_advective_order_0'
+test2 = 'bryan_fritsch_conservative_order_0'
 
 results_file_name1 = f'{abspath(dirname(__file__))}/results/{test1}/field_output.nc'
 results_file_name2 = f'{abspath(dirname(__file__))}/results/{test2}/field_output.nc'
@@ -26,7 +28,7 @@ plot_dir = f'{abspath(dirname(__file__))}/figures'
 # Plot details
 # ---------------------------------------------------------------------------- #
 # Time index to compare at
-t_idx = 2.
+t_idx = 4.
 
 field_names = ['Theta_e', 'Theta_e']
 time_idxs = [t_idx, t_idx]
@@ -80,9 +82,15 @@ for i, (ax, time_idx, field_name, cbar) in \
         add_colorbar_fig(
             fig, cf, field_label, ax_idxs=[i], location='right'
         )
-    tomplot_field_title(
-        ax, f't = {time:.1f} s', minmax=True, field_data=field_data
-    )
+
+    if i ==0:
+        tomplot_field_title(
+            ax, f'Advective form, t = {time:.1f} s', minmax=True, field_data=field_data
+        )
+    else:
+        tomplot_field_title(
+            ax, f'Conservative form, t = {time:.1f} s', minmax=True, field_data=field_data
+        )
 
     # Labels -------------------------------------------------------------------
     if i == 0:
@@ -100,7 +108,6 @@ for i, (ax, time_idx, field_name, cbar) in \
 
 plot_name= f'{plot_dir}/bubble_comp_order'+str(order)+'_t'+str(time)+'s.png'
 fig.subplots_adjust(wspace=0.15)
-plot_name = f'{plot_stem}.png'
 print(f'Saving figure to {plot_name}')
 fig.savefig(plot_name, bbox_inches='tight')
 plt.close()

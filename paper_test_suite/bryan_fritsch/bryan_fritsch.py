@@ -34,8 +34,8 @@ moist_bryan_fritsch_defaults = {
     'ncolumns': 50,
     'nlayers': 50,
     'dt': 2.0,
-    'tmax': 1000.0,
-    'dumpfreq': 125
+    'tmax': 1002.0,
+    'dumpfreq': 50.
 }
 
 
@@ -94,7 +94,8 @@ def moist_bryan_fritsch(
     # Equation
     params = CompressibleParameters()
     eqns = CompressibleEulerEquations(
-        domain, params, active_tracers=tracers, u_transport_option=u_eqn_type)
+        domain, params, active_tracers=tracers, u_transport_option=u_eqn_type
+    )
 
     # I/O
     if conservative_transport:
@@ -150,10 +151,12 @@ def moist_bryan_fritsch(
         if conservative_transport:
             Vt_brok = FunctionSpace(mesh, BrokenElement(V_theta.ufl_element()))
             suboptions = {'rho': EmbeddedDGOptions(embedding_space=Vt_brok),
-                        'water_vapour': ConservativeEmbeddedDGOptions(rho_name="rho",
-                                                                        orig_rho_space=V_rho),
-                        'cloud_water': ConservativeEmbeddedDGOptions(rho_name="rho",
-                                                                    orig_rho_space=V_rho)}
+                        'water_vapour': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
+                                                                      rho_name="rho",
+                                                                      orig_rho_space=V_rho),
+                        'cloud_water': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
+                                                                     rho_name="rho",
+                                                                     orig_rho_space=V_rho)}
         else:
             rho_opts = None
             wv_opts = EmbeddedDGOptions()
