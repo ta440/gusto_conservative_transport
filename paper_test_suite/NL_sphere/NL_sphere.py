@@ -72,7 +72,7 @@ def NL_sphere(
     xyz = SpatialCoordinate(mesh)
     domain = Domain(mesh, dt, 'BDM', order)
 
-    # Use staggered spaces for the tracers
+    # Use DG for both tracers (colocated)
     tracer_space = 'DG'
 
     # Define the mixing ratio and density as tracers
@@ -128,15 +128,32 @@ def NL_sphere(
     if order == 1:
         suboptions = {}
     elif order == 0:
-        suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
-                                               recovered_space=VCG1,
-                                               project_low_method='recover',
-                                               boundary_method=BoundaryMethod.taylor),
-                      'm_X': RecoveryOptions(embedding_space=VDG1,
-                                             recovered_space=VCG1,
-                                             project_low_method='recover',
-                                             boundary_method=BoundaryMethod.taylor)
-                      }
+        VCG1 = FunctionSpace(mesh, 'CG', 1)
+        VDG1 = domain.spaces('DG1_equispaced')    
+    
+        if conservative_transport:
+            suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
+                                                   recovered_space=VCG1,
+                                                   project_low_method='recover',
+                                                   boundary_method=BoundaryMethod.taylor),
+                          'm_X': ConservativeRecoveryOptions(embedding_space=VDG1,
+                                                             recovered_space=VCG1,
+                                                             boundary_method=BoundaryMethod.taylor,
+                                                             project_low_method='conservative_project',
+                                                             project_high_method='conservative_project',
+                                                             rho_name='rho_d',
+                                                             orig_rho_space=tracer_space)
+                                                             }
+        else:
+            suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
+                                                recovered_space=VCG1,
+                                                project_low_method='recover',
+                                                boundary_method=BoundaryMethod.taylor),
+                        'm_X': RecoveryOptions(embedding_space=VDG1,
+                                                recovered_space=VCG1,
+                                                project_low_method='recover',
+                                                boundary_method=BoundaryMethod.taylor)
+                        }
     else:
         raise NotImplementedError('Higher-order spaces are not'
                                   + 'implemented for this test case.')

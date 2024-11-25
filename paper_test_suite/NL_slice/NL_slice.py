@@ -185,9 +185,9 @@ def NL_slice(
     opts = MixedFSOptions(suboptions=suboptions)
     
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, options=opts)
+        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor)
     else:
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.increment)
+        transport_scheme = SSPRK3(domain, options=opts)
     
     
     time_varying_velocity = True
