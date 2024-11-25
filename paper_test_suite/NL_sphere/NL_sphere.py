@@ -28,13 +28,13 @@ from firedrake import (
 from gusto import *
 
 NL_sphere_defaults = {
-    'conservative_transport': True,  # whether to use conservative transport
+    'conservative_transport': False,   # whether to use conservative transport
     'configuration': 'convergence',   # 'convergence or 'consistency'
     'order': 1,                       # order of the finite element spaces
     'ncells_per_edge': 16,            # num points per icosahedron edge (ref level 4)
-    'dt': 900.0,                      # 15 minutes
+    'dt': 450.0,                      # 7.5 minutes, which should be sufficient for ref level 5.
     'tmax': 12.*24.*60.*60.,          # 12 days
-    'dumpfreq': 144,                  # 8 outputs: once every 1.5 days
+    'dumpfreq': 288,                  # 8 outputs: once every 1.5 days
 }
 
 
