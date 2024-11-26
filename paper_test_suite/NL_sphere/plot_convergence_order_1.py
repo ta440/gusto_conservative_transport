@@ -12,7 +12,7 @@ import numpy as np
 
 order = 1
 configuration = 'convergence'
-quantity = 'm_X' # tracer_density or m_X
+quantity = 'tracer_density' # tracer_density or m_X
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -21,9 +21,9 @@ quantity = 'm_X' # tracer_density or m_X
 # ---------------------------------------------------------------------------- #
 plot_dir = f'{abspath(dirname(__file__))}/figures'
 if quantity == 'm_X':
-    plot_name = f'{plot_dir}/NL_slice_ord_1_conv_m_l2_sse.png'
+    plot_name = f'{plot_dir}/NL_sphere_ord_1_conv_m_l2_sse.png'
 else:
-    plot_name = f'{plot_dir}/NL_slice_ord_1_conv_Td_diff.png'
+    plot_name = f'{plot_dir}/NL_sphere_ord_1_conv_Td_diff.png'
 conservative = []
 advective = []
 
@@ -91,15 +91,17 @@ labels = ['advective', 'tracer conservative']
 
 print(all_error_data)
 
-xlabel = r"$log(\Delta x)$"
+
 if quantity == 'tracer_density':
     log_by = 'axes'
-    log_base=10
-    ylabel = r"$log((T_d(T_{end}) - T_d(0))/T_d(0))$"
+    log_base = 10
+    ylabel = r"$(T_d(T_{end}) - T_d(0))/T_d(0)$"
+    xlabel = r"$\Delta x$"
 else:
     log_by = 'data'
     log_base= 'e'
-    ylabel = "$log(||m(T_{end}) - m(0)||/||m(0)||$"
+    xlabel = r"$ln(\Delta x)$"
+    ylabel = "$ln(||m(T_{end}) - m(0)||/||m(0)||$"
 
 
 set_tomplot_style()

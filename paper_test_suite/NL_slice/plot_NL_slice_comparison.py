@@ -10,9 +10,9 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig)
 import numpy as np
 
-order = 0
+order = 1
 configuration = 'convergence'
-quantity = 'm_X' # tracer_density or m_X
+quantity = 'tracer_density' # tracer_density or m_X
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -102,7 +102,7 @@ if quantity == 'tracer_density':
     log_by = 'axes'
     log_base=10
     ylabel = r"$(T_d(T_{end}) - T_d(0)/T_d(0))$"
-    xlabel = r"$log(\Delta x)$"
+    xlabel = r"$\Delta x$"
 else:
     log_by='data'
     log_base='e'
