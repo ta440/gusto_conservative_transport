@@ -9,8 +9,9 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      only_minmax_ticklabels, tomplot_legend_ax,
                      tomplot_legend_fig)
 import numpy as np
+from matplotlib.ticker import ScalarFormatter
 
-order = 1
+order = 0
 configuration = 'convergence'
 quantity = 'tracer_density' # tracer_density or m_X
 
@@ -36,7 +37,11 @@ conservative = []
 advective = []
 
 # Spatial refinements
-dxzs = [120, 140, 160, 180, 200]# [100, 140, 160, 180]
+if order == 1:
+    dxzs = [60, 70, 80, 90, 100]
+else:
+    dxzs = [120, 140, 160, 180, 200]
+
 dx_values = []
 
 for dxz in dxzs:
@@ -100,13 +105,13 @@ print(all_error_data)
 
 if quantity == 'tracer_density':
     log_by = 'axes'
-    log_base=10
-    ylabel = r"$(T_d(T_{end}) - T_d(0)/T_d(0))$"
+    log_base = 10
+    ylabel = r"$T_d(T_{end}) - T_d(0)/T_d(0)$"
     xlabel = r"$\Delta x$"
 else:
     log_by='data'
     log_base='e'
-    ylabel = "$ln(||m(T_{end}) - m(0)||/||m(0)||$"
+    ylabel = "$ln(||m(T_{end}) - m(0)||/||m(0)||)$"
     xlabel = r"$ln(\Delta x)$"
 
 set_tomplot_style()
@@ -115,11 +120,25 @@ for error_data, colour, marker, label in \
         zip(all_error_data, colours, markers, labels):
     plot_convergence(ax, dx_values, error_data, label=label,
                      color=colour, marker=marker, log_by=log_by,
-                     log_base=log_base)
+                     log_base=log_base, gradient_in_label=False)
                      
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
 
+if order == 1:  
+    if quantity == 'tracer_density':
+        ax.set_xlim([19,35])
+        ax.set_ylim([1e-14,1e-4])
+        plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
+else:  
+    if quantity == 'tracer_density':
+        ax.set_xlim([9.5, 17])
+        ax.set_ylim([1e-13,1e-5])
+        plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
+        plt.gca().xaxis.set_major_formatter(ScalarFormatter())
+        plt.xticks([])
+        #print(plt.xticks([10,12,14,16]))
+        
 tomplot_legend_ax(ax, location='bottom')
 
 plt.grid()
