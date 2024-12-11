@@ -9,11 +9,11 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      only_minmax_ticklabels, tomplot_legend_ax,
                      tomplot_legend_fig)
 import numpy as np
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 0
+order = 1
 configuration = 'convergence'
-quantity = 'tracer_density' # tracer_density or m_X
+quantity = 'm_X' # tracer_density or m_X
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -38,9 +38,9 @@ advective = []
 
 # Spatial refinements
 if order == 1:
-    dxzs = [60, 70, 80, 90, 100]
+    dxzs = [50, 60, 70, 80, 90, 100]
 else:
-    dxzs = [120, 140, 160, 180, 200]
+    dxzs = [100, 120, 140, 160, 180, 200]
 
 dx_values = []
 
@@ -127,18 +127,23 @@ ax.set_ylabel(ylabel)
 
 if order == 1:  
     if quantity == 'tracer_density':
-        ax.set_xlim([19,35])
+        ax.set_xlim([19,41])
         ax.set_ylim([1e-14,1e-4])
+        plt.gca().axes.xaxis.set_ticks([20,25,30,35,40])
+        plt.gca().axes.xaxis.set_ticklabels([20,25,30,35,40])
         plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
 else:  
     if quantity == 'tracer_density':
-        ax.set_xlim([9.5, 17])
-        ax.set_ylim([1e-13,1e-5])
-        plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
-        plt.gca().xaxis.set_major_formatter(ScalarFormatter())
-        plt.xticks([])
-        #print(plt.xticks([10,12,14,16]))
-        
+        ax.set_xlim([9.5, 20.5])
+        ax.set_ylim([1e-13,1e-4])
+        #plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
+        #plt.gca().xaxis.set_major_formatter(ScalarFormatter())
+        #plt.xticks([],minor=False)
+        #plt.xticks([10,12,14,16], minor=False)
+        plt.gca().axes.xaxis.set_ticks([10,12,14,16,18,20])
+        plt.gca().axes.xaxis.set_ticklabels([10,12,14,16,18,20])
+        plt.gca().xaxis.set_minor_locator(NullLocator())
+
 tomplot_legend_ax(ax, location='bottom')
 
 plt.grid()
