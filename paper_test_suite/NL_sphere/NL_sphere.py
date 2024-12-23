@@ -100,8 +100,8 @@ def NL_sphere(
     tracers = [rho_d, m_X]
 
     # Equation
-    #V = domain.spaces("Hdiv")
-    eqn = CoupledTransportEquation(domain, active_tracers=tracers)#, Vu=V)
+    V = domain.spaces("HDiv")
+    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu=V)
 
     if conservative_transport:
         transport_type = 'conservative'
