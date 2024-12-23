@@ -3,13 +3,12 @@ A test for the Conservative Transport in Gusto paper (Tim and Tom):
 
 'NL_sphere'.
 
-This implements a test from the Nair Laurtizen paper:
-'A class of deformational flow test cases for linear transport
-problems on the sphere'. 
+This implements the test in the 'Charney-Phillips trilemma'
+paper by Bendall, Wood, Thuburn, and Cotter, which is a planar version of
+the Gaussian test case given by Nair and Laurtizen.
 
 We will test consistency and conservation with co-located function
 spaces, where rho and m both lie in DG.
-A cubed-sphere mesh is used so that we have quadrilateral elements.
 
 - The 'convergence' configuration has an initial condition of a linearly
       varying density field and two Gaussian bumps for the mixing ratio.
@@ -29,10 +28,10 @@ from firedrake import (
 from gusto import *
 
 NL_sphere_defaults = {
-    'conservative_transport': False,  # whether to use conservative transport
+    'conservative_transport': False,   # whether to use conservative transport
     'configuration': 'convergence',   # 'convergence or 'consistency'
     'order': 1,                       # order of the finite element spaces
-    'ncells_per_edge': 24,            # num points per cubed sphere panel edge
+    'ncells_per_edge': 16,            # num points per icosahedron edge (ref level 4)
     'dt': 450.0,                      # 7.5 minutes, which should be sufficient for ref level 5.
     'tmax': 12.*24.*60.*60.,          # 12 days
     'dumpfreq': 288,                  # 8 outputs: once every 1.5 days
@@ -69,9 +68,9 @@ def NL_sphere(
     print('Using conservative transport?: ', conservative_transport)
 
     # Domain
-    mesh = GeneralCubedSphereMesh(radius, ncells_per_edge, degree=2)
+    mesh = GeneralIcosahedralSphereMesh(radius, ncells_per_edge, degree=2)
     xyz = SpatialCoordinate(mesh)
-    domain = Domain(mesh, dt, 'RTCF', order)
+    domain = Domain(mesh, dt, 'BDM', order)
 
     # Use DG for both tracers (colocated)
     tracer_space = 'DG'
@@ -100,15 +99,15 @@ def NL_sphere(
     tracers = [rho_d, m_X]
 
     # Equation
-    #V = domain.spaces("Hdiv")
-    eqn = CoupledTransportEquation(domain, active_tracers=tracers)#, Vu=V)
+    V = domain.spaces("HDiv")
+    eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu=V)
 
     if conservative_transport:
         transport_type = 'conservative'
     else:
         transport_type = 'advective'
 
-    dirname = 'NL_sphere_'+transport_type+'_order_'+str(order)+'_'+configuration+'_ncells_'+str(ncells_per_edge)
+    dirname = 'NL_sphere_diagtest_'+transport_type+'_order_'+str(order)+'_'+configuration+'_ncells_'+str(ncells_per_edge)
 
     # I/O
     output = OutputParameters(
@@ -213,11 +212,11 @@ def NL_sphere(
     g2 = exp(-5*((X-X2)**2 + (Y-Y2)**2 + (Z-Z2)**2))
 
     if configuration == 'convergence':
-        rho_d_0 = rho_b + 0.5*cos(theta)
-        m_X_0 = m0 + g1 + g2
+        rho_d_0 = rho_b + 0.5*cos(lamda)
+        m_X_0 = g1 + g2
     elif configuration == 'consistency':
         rho_d_0 = rho_b + g1 + g2
-        m_X_0 = m0 + 0*cos(theta)
+        m_X_0 = m0 + 0*xyz
     else:
         raise ValueError('Specified configuration is not valid')
 
