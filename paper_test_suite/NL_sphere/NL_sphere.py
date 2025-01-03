@@ -143,7 +143,7 @@ def NL_sphere(
                                                              project_low_method='conservative_project',
                                                              project_high_method='conservative_project',
                                                              rho_name='rho_d',
-                                                             orig_rho_space=tracer_space)
+                                                             orig_rho_space=domain.spaces(tracer_space))
                                                              }
         else:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
@@ -213,10 +213,12 @@ def NL_sphere(
     g2 = exp(-5*((X-X2)**2 + (Y-Y2)**2 + (Z-Z2)**2))
 
     if configuration == 'convergence':
+        g_max = 0.05
         rho_d_0 = rho_b + 0.5*cos(theta)
-        m_X_0 = m0 + g1 + g2
+        m_X_0 = m0 + g_max*g1 + g_max*g2
     elif configuration == 'consistency':
-        rho_d_0 = rho_b + g1 + g2
+        g_max = 0.5
+        rho_d_0 = rho_b + g_max*g1 + g_max*g2
         m_X_0 = m0 + 0*cos(theta)
     else:
         raise ValueError('Specified configuration is not valid')
