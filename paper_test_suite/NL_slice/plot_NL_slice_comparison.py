@@ -11,7 +11,7 @@ from tomplot import (set_tomplot_style, plot_convergence,
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 1
+order = 0
 configuration = 'convergence'
 quantity = 'm_X' # tracer_density or m_X
 
@@ -66,7 +66,9 @@ for dxz in dxzs:
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
         m_err_l2 = m_err.variables['l2'][:]
-        conservative.append(np.abs(m_err_l2[-1]))
+        mX = nc.groups['m_X']
+        mX0 = mX.variables['l2'][0]
+        conservative.append(np.abs(m_err_l2[-1])/mX0)
     else:
         raise ValueError('Not correct inputs')
 
@@ -90,7 +92,11 @@ for dxz in dxzs:
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
         m_err_l2 = m_err.variables['l2'][:]
-        advective.append(np.abs(m_err_l2[-1]))
+        mX = nc.groups['m_X']
+        mX0 = mX.variables['l2'][0]
+        print(mX0)
+        advective.append(np.abs(m_err_l2[-1])/mX0)
+        print(np.log(np.abs(m_err_l2[-1])))
     else:
         raise ValueError('Not correct inputs')
     

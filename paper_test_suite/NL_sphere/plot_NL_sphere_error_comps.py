@@ -10,9 +10,9 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig)
 import numpy as np
 
-order = 0
+order = 1
 configuration = 'convergence'
-quantity = 'tracer_density' # tracer_density or m_X
+quantity = 'm_X' # tracer_density or m_X
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -30,7 +30,7 @@ advective = []
 # Spatial refinement levels (cells_per_edge = C48 and powers of 2 thereof)
 if configuration == 'convergence':
     if order == 1:
-        ncells_per_edge = [4,8,16,24,48]
+        ncells_per_edge = [4,8,16,24,32,48]
     else:
         ncells_per_edge = [4,8,16,32]
 else:
@@ -57,7 +57,12 @@ for cell_no in ncells_per_edge:
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
         m_err_l2 = m_err.variables['l2'][:]
-        conservative.append(np.abs(m_err_l2[-1]))
+        # Normalise steady state error by initial value
+        # of m_X
+        mX = nc.groups['m_X']
+        mX0 = mX.variables['l2'][0]
+        print(mX0)
+        conservative.append(np.abs(m_err_l2[-1])/mX0)
         print(np.log(np.abs(m_err_l2[-1])))
     else:
         raise ValueError('Not correct inputs')
@@ -83,7 +88,10 @@ for cell_no in ncells_per_edge:
     elif quantity == 'm_X':
         m_err = nc.groups['m_X_error']
         m_err_l2 = m_err.variables['l2'][:]
-        advective.append(np.abs(m_err_l2[-1]))
+        mX = nc.groups['m_X']
+        mX0 = mX.variables['l2'][0]
+        print(mX0)
+        advective.append(np.abs(m_err_l2[-1])/mX0)
         print(np.log(np.abs(m_err_l2[-1])))
     else:
         raise ValueError('Not correct inputs')
