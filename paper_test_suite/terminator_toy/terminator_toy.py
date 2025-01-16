@@ -13,13 +13,13 @@ X and X2. We want to test using conservative form
 for both of these mixing ratios. Specifically, the mixing ratios
 will live in the theta space, with rho_d in DG.
 
-We will only use order 1 elements in this test,
-but will examine conservation when the tracers are in 
-colocated and staggered spaces.
+We will only use order 1 elements and colocated spaces
+to avoid needing wrappers along with he mean
+mixing ratio augmentation for the limiting.
 """
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from firedrake import IcosahedralSphereMesh, Constant, ge, le, exp, cos, \
+from firedrake import Constant, ge, le, exp, cos, \
     sin, conditional, interpolate, SpatialCoordinate, VectorFunctionSpace, \
     Function, assemble, dx, FunctionSpace, pi, max_value, acos, as_vector
 
@@ -28,7 +28,6 @@ import numpy as np
 
 terminator_toy_defaults = {
     'conservative_transport': False, # Whether to use conservative transport
-    'diff_spaces': False,            # Colocated or staggered spaces
     'ncells_per_edge': 24,           # num points per cubed sphere panel edge
     'dt': 450.0,                     # 7.5 minutes
     'tmax': 12.*24.*60.*60.,         # 12 days
@@ -37,7 +36,6 @@ terminator_toy_defaults = {
 
 def terminator_toy(
         conservative_transport=terminator_toy_defaults['conservative_transport'],
-        diff_spaces=terminator_toy_defaults['diff_spaces'],
         ncells_per_edge=terminator_toy_defaults['ncells_per_edge'],
         dt=terminator_toy_defaults['dt'],
         tmax=terminator_toy_defaults['tmax'],
@@ -64,8 +62,6 @@ def terminator_toy(
     # Domain
     print('Using conservative transport?: ', conservative_transport)
 
-    print('Using different spaces for rho and X,X2? ', diff_spaces)
-
     # Domain
     mesh = GeneralCubedSphereMesh(radius, ncells_per_edge, degree=2)
     xyz = SpatialCoordinate(mesh)
@@ -74,13 +70,9 @@ def terminator_toy(
     # get lat lon coordinates
     lamda, theta, _ = lonlatr_from_xyz(xyz[0], xyz[1], xyz[2])
 
-    # Use staggered spaces
+    # Use co-located spaces
     rho_d_space = 'DG'
-
-    if diff_spaces:
-        m_X_space = 'theta'
-    else:
-        m_X_space = 'DG'
+    m_X_space = 'DG'
 
     V_rho = domain.spaces(rho_d_space)
     V_m_X = domain.spaces(m_X_space)
@@ -122,12 +114,7 @@ def terminator_toy(
     else:
         transport_type='advective'
 
-    if diff_spaces:
-        dirname = 'terminator_toy_diff_spaces_'+transport_type+'_ncells_'+str(ncells_per_edge)
-    else:
-        dirname = 'terminator_toy_same_spaces_'+transport_type+'_ncells_'+str(ncells_per_edge)
-   
-
+    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -138,7 +125,12 @@ def terminator_toy(
     X_mass = TracerDensity('X_tracer', 'rho_d')
     X2_mass = TracerDensity('X2_tracer', 'rho_d')
 
-    io = IO(domain, output, diagnostic_fields = [X_mass, X2_mass])
+    X_plus_X = Sum('X_tracer', 'X_tracer')
+    X2_plus_X2 = Sum('X_plus_X', 'X2_tracer')
+    td = TracerDensity('X2_plus_2X', 'rho_d')
+
+    io = IO(domain, output, diagnostic_fields = [X_mass, X2_mass])#, X_plus_X, \
+                                                 #X2_plus_X2, td])
 
     k1 = max_value(0, sin(theta)*sin(theta_cr) + cos(theta)*cos(theta_cr)*cos(lamda-lamda_cr))
     k2 = 1
@@ -176,33 +168,12 @@ def terminator_toy(
 
         return xyz_vector_from_lonlatr(u_zonal, u_merid, Constant(0.0), xyz)
 
-    if diff_spaces:
-        Vt_brok = FunctionSpace(mesh, BrokenElement(V_m_X.ufl_element()))
-        
-        if conservative_transport:
-            suboptions = {'rho_d': EmbeddedDGOptions(embedding_space=Vt_brok),
-                          'X_tracer':ConservativeEmbeddedDGOptions(project_back_method='conservative_project',
-                                                            rho_name='rho_d',
-                                                            orig_rho_space=V_rho),
-                          'X2_tracer':ConservativeEmbeddedDGOptions(project_back_method='conservative_project',
-                                                             rho_name='rho_d',
-                                                             orig_rho_space=V_rho)
-                                                             }
-        else:
-            suboptions = {'rho_d':RecoveryOptions(embedding_space=Vt_brok,
-                                                  recovered_space=V_m_X,
-                                                  project_low_method='recover'),
-                          'X_tracer': EmbeddedDGOptions(),
-                          'X2_tracer': EmbeddedDGOptions()}
-    else:
-        suboptions = {}
-
-    opts = MixedFSOptions(suboptions=suboptions)
+    augmentation = MeanMixingRatio(domain, eqn, ['X_tracer', 'X2_tracer'])
 
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor)
+        transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
     else:
-        transport_scheme = SSPRK3(domain, options=opts)
+        transport_scheme = SSPRK3(domain, augmentation=augmentation)
 
     transport_method = [DGUpwind(eqn, 'rho_d'), DGUpwind(eqn, 'X_tracer'), DGUpwind(eqn, 'X2_tracer')]
                                         
@@ -234,12 +205,6 @@ if __name__ == "__main__":
         help="Whether to apply conservative transport or not",
         type=bool,
         default=terminator_toy_defaults['conservative_transport']
-    )
-    parser.add_argument(
-        '--diff_spaces',
-        help="Whether to use different spaces for the tracers or not",
-        type=bool,
-        default=terminator_toy_defaults['diff_spaces']
     )
     parser.add_argument(
         '--ncells_per_edge',
