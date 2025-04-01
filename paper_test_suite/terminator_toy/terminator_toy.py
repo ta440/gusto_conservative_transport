@@ -21,7 +21,7 @@ mixing ratio augmentation for the limiting.
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from firedrake import Constant, ge, le, exp, cos, \
     sin, conditional, interpolate, SpatialCoordinate, VectorFunctionSpace, \
-    Function, assemble, dx, FunctionSpace, pi, max_value, acos, as_vector
+    Function, assemble, dx, FunctionSpace, pi, max_value, acos, as_vector, sqrt
 
 from gusto import *
 import numpy as np
@@ -51,18 +51,17 @@ def terminator_toy(
     radius = 6371220.      # radius of the sphere, in m
     theta_cr = pi/9.       # central latitude of first reaction rate, in rad
     lamda_cr = -pi/3.      # central longitude of first reaction rate, in rad
-    k1_max = 1.            # amplitude of first reaction rate parameter, in 1/s
-    k2 = 1.                # second reaction rate parameter, in 1/s
     theta_c1 = 0.          # central latitude of first chemical blob, in rad
     theta_c2 = 0.          # central latitude of second chemical blob, in rad
     lamda_c1 = -pi/4.      # central longitude of first chemical blob, in rad
     lamda_c2 = pi/4.       # central longitude of second chemical blob, in rad
-    b0 = 5                 # controls the width of the chemical blobs
+    rho_b = 1              # Base dry density
+    g_max = 0.5            # Maximum amplitude of Gaussian density perturbations
+    b0 = 5                 # Controls the width of the chemical blobs
 
-    # Domain
     print('Using conservative transport?: ', conservative_transport)
 
-    # Domain
+    # Domain. Use order 1 elements only
     mesh = GeneralCubedSphereMesh(radius, ncells_per_edge, degree=2)
     xyz = SpatialCoordinate(mesh)
     domain = Domain(mesh, dt, 'RTCF', 1)
@@ -114,7 +113,8 @@ def terminator_toy(
     else:
         transport_type='advective'
 
-    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)
+    #dirname = 'terminator_toy_mmr_analyt_forced_'+transport_type+'_ncells_'+str(ncells_per_edge)
+    dirname = 'terminator_toy_ref_analyt_forced_'+transport_type+'_ncells_'+str(ncells_per_edge)
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -135,19 +135,21 @@ def terminator_toy(
     k1 = max_value(0, sin(theta)*sin(theta_cr) + cos(theta)*cos(theta_cr)*cos(lamda-lamda_cr))
     k2 = 1
 
-    terminator_stepper = BackwardEuler(domain)
-
+    #physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
+    #                    species2_name='X2_tracer'), BackwardEuler(domain))]
+    
     physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
-                        species2_name='X2_tracer'), terminator_stepper)]
+                        species2_name='X2_tracer', analytical_formulation=True), 
+                        ForwardEuler(domain))]
 
     X, Y, Z = xyz
     X1, Y1, Z1 = xyz_from_lonlatr(lamda_c1, theta_c1, radius)
     X2, Y2, Z2 = xyz_from_lonlatr(lamda_c2, theta_c2, radius)
 
-    g1 = exp(-(b0/(radius**2))*((X-X1)**2 + (Y-Y1)**2 + (Z-Z1)**2))
-    g2 = exp(-(b0/(radius**2))*((X-X2)**2 + (Y-Y2)**2 + (Z-Z2)**2))
+    g1 = g_max*exp(-(b0/(radius**2))*((X-X1)**2 + (Y-Y1)**2 + (Z-Z1)**2))
+    g2 = g_max*exp(-(b0/(radius**2))*((X-X2)**2 + (Y-Y2)**2 + (Z-Z2)**2))
 
-    rho_expr = g1 + g2
+    rho_expr = rho_b + g1 + g2
 
     X_T_0 = 4e-6
     r = k1/(4*k2)
@@ -173,7 +175,8 @@ def terminator_toy(
     if conservative_transport:
         transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
     else:
-        transport_scheme = SSPRK3(domain, augmentation=augmentation)
+        transport_scheme = SSPRK3(domain)#, augmentation=augmentation)
+        # Limiting if don't want to use mean mixing ratio.
 
     transport_method = [DGUpwind(eqn, 'rho_d'), DGUpwind(eqn, 'X_tracer'), DGUpwind(eqn, 'X2_tracer')]
                                         
