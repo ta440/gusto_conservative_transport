@@ -17,8 +17,9 @@ ncells_per_edge = 24
 quantity = 'tracer_density'
 
 # Specific names for the advective and conservative results:
-adv_ref_name = 'ref_analyt_interp_zerochemlim_lower_upper_physlimv3'
+adv_ref_name = 'analyt_ref_Td_solve'
 adv_extra_name = 'mmr_twolambda'
+con_ref_name = 'ref_analyt_forced'
 con_extra_name = 'mmr_twolambda'
 save_name = 'two_lambda'
 
@@ -32,9 +33,6 @@ plot_name = f'{plot_dir}/terminator_toy_{save_name}_with_ref_Td_over_time_{dxz}.
 adv_ref_dirname = f'terminator_toy_{adv_ref_name}_advective_ncells_{ncells_per_edge}'
 nc = Dataset(f'results/{adv_ref_dirname}/diagnostics.nc')
 
-times = np.asarray(nc['time'])
-print(nc.groups)
-
 # Advective ref
 Td_adv_ref_X = nc.groups['TracerDensity_X_tracer_rho_d']
 Td_adv_ref_X = Td_adv_ref_X['total'][:]
@@ -47,9 +45,6 @@ Td_adv_ref_diff = np.abs(Td_adv_ref - Td_adv_ref[0])/Td_adv_ref[0]
 adv_dirname = f'terminator_toy_{adv_extra_name}_advective_ncells_{ncells_per_edge}'
 nc = Dataset(f'results/{adv_dirname}/diagnostics.nc')
 
-times = np.asarray(nc['time'])
-print(nc.groups)
-
 # Advective MMR
 Td_adv_X = nc.groups['TracerDensity_X_tracer_rho_d']
 Td_adv_X = Td_adv_X['total'][:]
@@ -58,11 +53,27 @@ Td_adv_X2 = Td_adv_X2['total'][:]
 Td_adv = Td_adv_X + 2*Td_adv_X2
 Td_adv_diff = np.abs(Td_adv - Td_adv[0])/Td_adv[0]
 
-# Conservative result:
+################################
+# Conservative ref result:
+con_ref_dirname = f'terminator_toy_{con_ref_name}_conservative_ncells_{ncells_per_edge}'
+nc = Dataset(f'results/{con_ref_dirname}/diagnostics.nc')
+
+times = np.asarray(nc['time'])
+print(nc.groups)
+
+# Conservative ref
+Td_con_ref_X = nc.groups['TracerDensity_X_tracer_rho_d']
+Td_con_ref_X = Td_con_ref_X['total'][:]
+Td_con_ref_X2 = nc.groups['TracerDensity_X2_tracer_rho_d']
+Td_con_ref_X2 = Td_con_ref_X2['total'][:]
+Td_con_ref = Td_con_ref_X + 2*Td_con_ref_X2
+Td_con_ref_diff = np.abs(Td_con_ref - Td_con_ref[0])/Td_con_ref[0]
+
+# Conservative MMR result:
 con_dirname = f'terminator_toy_{con_extra_name}_conservative_ncells_{ncells_per_edge}'
 nc = Dataset(f'results/{con_dirname}/diagnostics.nc')
 
-# Conservative
+# Conservative MMR
 Td_con_X = nc.groups['TracerDensity_X_tracer_rho_d']
 Td_con_X = Td_con_X['total'][:]
 Td_con_X2 = nc.groups['TracerDensity_X2_tracer_rho_d']
@@ -75,6 +86,7 @@ Td_con_diff = np.abs(Td_con - Td_con[0])/Td_con[0]
 plt.figure()
 plt.plot(times, Td_adv_ref_diff, label='advective reference')
 plt.plot(times, Td_adv_diff, label='advective MMR ')
+plt.plot(times, Td_con_ref_diff, label='conservative reference')
 plt.plot(times, Td_con_diff, label='conservative MMR')
 plt.xlabel('Time (s)')
 plt.ylabel('$|T_{d}(t) - T_{d}(0)| / T_{d}(0)$')
@@ -90,13 +102,15 @@ print('Diff in initial Td between results is ', np.abs(Td_con[0]-Td_adv[0]))
 
 print('End Td diff for advective reference', Td_adv_ref_diff[-1])
 print('End Td diff for advective MMR', Td_adv_diff[-1])
+print('End Td diff for conservative reference', Td_con_ref_diff[-1])
 print('End Td diff for conservative MMR', Td_con_diff[-1])
 
 
 #Log graph
 plt.figure()
 plt.semilogy(times, Td_adv_ref_diff, label='advective reference')
-plt.plot(times, Td_adv_diff, label='advective MMR')
+plt.semilogy(times, Td_adv_diff, label='advective MMR')
+plt.semilogy(times, Td_con_ref_diff, label='conservative reference')
 plt.semilogy(times, Td_con_diff, label='conservative MMR')
 plt.xlabel('Time (s)')
 plt.ylabel('$|T_{d}(t) - T_{d}(0)| / T_{d}(0)$')
