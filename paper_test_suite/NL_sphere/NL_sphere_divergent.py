@@ -100,8 +100,10 @@ def NL_sphere(
     tracers = [rho_d, m_X]
 
     # Equation
-    #V = domain.spaces("HDiv")
-    V = VectorFunctionSpace(mesh, 'CG', 1)
+    if order == 0:
+        V = VectorFunctionSpace(mesh, 'CG', 1)
+    elif order == 1:
+        V = domain.spaces("HDiv")
     eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu=V)
 
     if conservative_transport:
@@ -109,7 +111,12 @@ def NL_sphere(
     else:
         transport_type = 'advective'
 
-    dirname = f'NL_sphere_{transport_type}_order_{str(order)}_{configuration}_ncells_{str(ncells_per_edge)}_dt_{dt}_divflow_Vu_CG1'
+    if configuration == 'consistency':
+        dirname = f'NL_sphere_{transport_type}_order_{str(order)}_{configuration}_ncells_{str(ncells_per_edge)}'
+    elif order == 0:
+        dirname = f'NL_sphere_{transport_type}_order_{str(order)}_{configuration}_ncells_{str(ncells_per_edge)}_dt_{dt}_divflow_Vu_CG1_td_solve'
+    else:
+        dirname = f'NL_sphere_{transport_type}_order_{str(order)}_{configuration}_ncells_{str(ncells_per_edge)}_td_solve'
 
     # I/O
     output = OutputParameters(
@@ -118,8 +125,8 @@ def NL_sphere(
 
     # Use a tracer density diagnostic to track conservation
     # Compare interpolate vs solve methods.
-    td = TracerDensity('m_X', 'rho_d')
-    #td = TracerDensity('m_X', 'rho_d', method='solve')
+    #td = TracerDensity('m_X', 'rho_d')
+    td = TracerDensity('m_X', 'rho_d', method='solve')
 
     diagnostic_fields = [
         td, SteadyStateError('m_X'),
@@ -134,14 +141,13 @@ def NL_sphere(
     if order == 1:
         suboptions = {}
     elif order == 0:
-        VCG1 = FunctionSpace(mesh, 'CG', 1)
-        #VDG1 = domain.spaces('DG1_equispaced')    
+        VCG1 = FunctionSpace(mesh, 'CG', 1)  
         VDG1 = domain.spaces('DG1_equispaced')    
     
         if conservative_transport:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
                                                    recovered_space=VCG1,
-                                                   project_low_method='recover'),
+                                                   project_low_method='project'),
                           'm_X': ConservativeRecoveryOptions(embedding_space=VDG1,
                                                              recovered_space=VCG1,
                                                              project_low_method='conservative_project',

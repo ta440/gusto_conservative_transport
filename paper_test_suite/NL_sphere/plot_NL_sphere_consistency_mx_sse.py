@@ -12,7 +12,7 @@ from tomplot import (set_tomplot_style, plot_convergence,
 import numpy as np
 
 order = 1
-Ne = 32
+
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -28,34 +28,52 @@ extra_name = ''
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
-plot_dir = f'{abspath(dirname(__file__))}/figures'
-plot_name = f'{abspath(dirname(__file__))}/NL_sphere_ord_{order}_consistency_m_l2_sse_over_time.png'
+plot_name = f'{abspath(dirname(__file__))}/figures/NL_sphere_ord_{order}_consistency_m_l2_sse_over_time.png'
+
+if order == 0:
+    Ne = 48
+elif order == 1:
+    Ne = 32
 
 # Advective result:
-adv_dirname = f'NL_sphere_advective_order_{order}_consistency_ncells_{Ne}{extra_name}/field_output.nc'
+adv_dirname = f'NL_sphere_advective_order_{order}_consistency_ncells_{Ne}{extra_name}'
 nc = Dataset(f'{abspath(dirname(__file__))}/results/{adv_dirname}/diagnostics.nc')
 
 times = np.asarray(nc['time'])
+time_days = times/60/60/24
 
 adv_mx_sse = nc.groups['m_X_error']
-adv_mx_sse = adv_mx_sse['total'][:]
+adv_mx_sse = adv_mx_sse['l2'][:]
+
+# Normalise:
+adv_mX = nc.groups['m_X']
+adv_mX = adv_mX['l2'][:]
+adv_mX0 = adv_mX[0]
+adv_mx_sse = adv_mx_sse/adv_mX0
 
 
 # Conservative result:
-con_dirname = f'{abspath(dirname(__file__))}/results/NL_sphere_conservative_order_{order}_consistency_ncells_{Ne}{extra_name}/field_output.nc'
+con_dirname = f'NL_sphere_conservative_order_{order}_consistency_ncells_{Ne}{extra_name}'
 conservative_nc = Dataset(f'{abspath(dirname(__file__))}/results/{con_dirname}/diagnostics.nc')
 
 con_mx_sse = conservative_nc.groups['m_X_error']
-con_mx_sse = con_mx_sse['total'][:]
+con_mx_sse = con_mx_sse['l2'][:]
+
+# Normalise:
+con_mX = nc.groups['m_X']
+con_mX = con_mX['l2'][:]
+con_mX0 = con_mX[0]
+con_mx_sse = con_mx_sse/con_mX0
+
 
 # Plot these tracer densities
 plt.figure()
-plt.semilogy(times, adv_mx_sse, label='advective')
-plt.semilogy(times, adv_mx_sse, label='conservative')
-plt.xlabel('Time (s)')
-plt.ylabel('|T_d(t) - T_d(0)| / T_d(0)')
-plt.legend()
+plt.semilogy(time_days, adv_mx_sse, label='advective', c='r')
+plt.semilogy(time_days, con_mx_sse, label='tracer conservative', c='b')
+plt.xlabel('Time (days)', size=12)
+plt.ylabel('Relative mixing ratio error', size=12)
+plt.legend(loc='lower right', prop={'size': 12})
 
 print(f'Saving figure to {plot_name}')
-fig.savefig(plot_name, bbox_inches='tight')
+plt.savefig(plot_name, bbox_inches='tight')
 plt.close()
