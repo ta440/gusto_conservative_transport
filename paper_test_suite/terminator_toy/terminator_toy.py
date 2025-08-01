@@ -61,9 +61,10 @@ def terminator_toy(
 
     print('Using conservative transport?: ', conservative_transport)
 
-    # Domain. Use order 1 elements only
     mesh = GeneralCubedSphereMesh(radius, ncells_per_edge, degree=2)
     xyz = SpatialCoordinate(mesh)
+
+    # Only use order 1 elements
     domain = Domain(mesh, dt, 'RTCF', 1)
 
     # get lat lon coordinates
@@ -114,7 +115,7 @@ def terminator_toy(
         transport_type='advective'
 
     #dirname = 'terminator_toy_mmr_analyt_forced_'+transport_type+'_ncells_'+str(ncells_per_edge)
-    dirname = 'terminator_toy_ref_analyt_forced_'+transport_type+'_ncells_'+str(ncells_per_edge)
+    dirname = 'terminator_toy_aug1_zerocrops_and_chemlim'+transport_type+'_ncells_'+str(ncells_per_edge)
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -122,8 +123,8 @@ def terminator_toy(
                               dump_nc = True,
                               dump_vtus = False)     
 
-    X_mass = TracerDensity('X_tracer', 'rho_d')
-    X2_mass = TracerDensity('X2_tracer', 'rho_d')
+    X_mass = TracerDensity('X_tracer', 'rho_d', method='solve')
+    X2_mass = TracerDensity('X2_tracer', 'rho_d', method='solve')
 
     X_plus_X = Sum('X_tracer', 'X_tracer')
     X2_plus_X2 = Sum('X_plus_X', 'X2_tracer')
@@ -138,9 +139,19 @@ def terminator_toy(
     #physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
     #                    species2_name='X2_tracer'), BackwardEuler(domain))]
     
+    # Set up the Terminator Toy physics.
+    # The ClipZero limiter only removes very small negative values
+    # that are a result of rounding error.
+    mixed_phys_limiter = MixedFSLimiter(
+        eqn,
+        {'rho_d': ZeroLimiter(V_rho),
+         'X_tracer': ZeroLimiter(V_m_X),
+         'X2_tracer': ZeroLimiter(V_m_X)}
+    )
+    
     physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
                         species2_name='X2_tracer', analytical_formulation=True), 
-                        ForwardEuler(domain))]
+                        ForwardEuler(domain, limiter=mixed_phys_limiter))]
 
     X, Y, Z = xyz
     X1, Y1, Z1 = xyz_from_lonlatr(lamda_c1, theta_c1, radius)
@@ -175,7 +186,7 @@ def terminator_toy(
     if conservative_transport:
         transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
     else:
-        transport_scheme = SSPRK3(domain)#, augmentation=augmentation)
+        transport_scheme = SSPRK3(domain)
         # Limiting if don't want to use mean mixing ratio.
 
     transport_method = [DGUpwind(eqn, 'rho_d'), DGUpwind(eqn, 'X_tracer'), DGUpwind(eqn, 'X2_tracer')]
