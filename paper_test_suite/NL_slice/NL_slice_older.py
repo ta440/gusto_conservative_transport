@@ -17,6 +17,10 @@ spaces, where rho is in DG and m is in the theta space.
 
 We will test this setup with order 0 and order 1 finite elements.
 
+This is an older version, used to get the Tdsolve results,
+where porject_low_method='recover' is used instead of 
+'project'. 
+
 """
 
 
@@ -115,7 +119,7 @@ def NL_slice(
     else:
         transport_type='advective'
     
-    dirname = 'NL_slice_proj_18aug_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
+    dirname = 'NL_slice_Tdsolve_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
     
     # I/O
     output = OutputParameters(
@@ -125,6 +129,7 @@ def NL_slice(
     # Use a tracer density diagnostic to track conservation.
     # Use the solve method for the best accuracy
     td = TracerDensity('m_X', 'rho_d', method='solve')
+
 
     diagnostic_fields = [
         td, SteadyStateError('m_X'),
@@ -145,7 +150,7 @@ def NL_slice(
         if conservative_transport:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
                                                    recovered_space=VCG1,
-                                                   project_low_method='project',
+                                                   project_low_method='recover',
                                                    boundary_method=BoundaryMethod.taylor),
                           'm_X': ConservativeRecoveryOptions(embedding_space=VDG1,
                                                              recovered_space=VCG1,
@@ -158,11 +163,11 @@ def NL_slice(
         else:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
                                                    recovered_space=VCG1,
-                                                   project_low_method='project',
+                                                   project_low_method='recover',
                                                    boundary_method=BoundaryMethod.taylor),
                           'm_X': RecoveryOptions(embedding_space=VDG1,
                                                  recovered_space=VCG1,
-                                                 project_low_method='project',
+                                                 project_low_method='recover',
                                                  boundary_method=BoundaryMethod.taylor)
                                                  }
     elif order == 1:
@@ -179,7 +184,7 @@ def NL_slice(
         else:
             suboptions = {'rho_d':RecoveryOptions(embedding_space=Vt_brok,
                                                   recovered_space=V_m_X,
-                                                  project_low_method='project'),
+                                                  project_low_method='recover'),
                           'm_X': EmbeddedDGOptions()}
     else:
         raise NotImplementedError('Higher-order spaces have not been'
