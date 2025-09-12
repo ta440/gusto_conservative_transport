@@ -115,7 +115,7 @@ def NL_slice(
     else:
         transport_type='advective'
     
-    dirname = 'NL_slice_proj_18aug_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
+    dirname = 'NL_slice_recover12sept_'+transport_type+'_order_'+str(order)+'_'+configuration+'_dxz_'+str(ncells_1d)
     
     # I/O
     output = OutputParameters(
@@ -172,7 +172,9 @@ def NL_slice(
         Vt_brok = FunctionSpace(mesh, BrokenElement(V_m_X.ufl_element()))
         
         if conservative_transport:
-            suboptions = {'rho_d': EmbeddedDGOptions(embedding_space=Vt_brok),
+            suboptions = {'rho_d': RecoveryOptions(embedding_space=Vt_brok,
+                                                   recovered_space=V_m_X,
+                                                   project_low_method='project'),
                           'm_X': ConservativeEmbeddedDGOptions(project_back_method='conservative_project',
                                                                rho_name='rho_d',
                                                                orig_rho_space=V_rho)}
