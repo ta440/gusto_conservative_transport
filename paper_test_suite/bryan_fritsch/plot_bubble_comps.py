@@ -14,13 +14,15 @@ from tomplot import (
     extract_gusto_field
 )
 
-order = 1
+order = 0
 
-test1 = 'bryan_fritsch_advective_order_1'
-test2 = 'bryan_fritsch_conservative_order_1'
+test1 = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_advective_order_{order}dxz50'
+test2 = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_conservative_order_{order}dxz50'
 
-results_file_name1 = f'{abspath(dirname(__file__))}/results/{test1}/field_output.nc'
-results_file_name2 = f'{abspath(dirname(__file__))}/results/{test2}/field_output.nc'
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
+
+results_file_name1 = f'{results_dir}results/{test1}/field_output.nc'
+results_file_name2 = f'{results_dir}results/{test2}/field_output.nc'
 
 plot_dir = f'{abspath(dirname(__file__))}/figures'
 
@@ -28,12 +30,12 @@ plot_dir = f'{abspath(dirname(__file__))}/figures'
 # Plot details
 # ---------------------------------------------------------------------------- #
 # Time index to compare at
-t_idx = 3.
-field = 'water_vapour'
+t_idx = 10.
+field = 'Theta_e'
 
 field_names = [field, field]
 time_idxs = [t_idx, t_idx]
-cbars = [True, True]
+cbars = [False, True]
 
 # ---------------------------------------------------------------------------- #
 # General options
@@ -42,8 +44,8 @@ if field == 'theta':
     contours = np.linspace(290,330,21)
 elif field == 'rho':
     contours = np.linspace(0.4,1.2,21)
-elif field == 'theta_e':
-    contours = np.linspace(315.0, 325.0, 21)
+elif field == 'Theta_e':
+    contours = np.linspace(317.0, 326.0, 9)
 elif field == 'cloud_water':
     contours = np.linspace(0.01,0.02,21)
 elif field == 'water_vapour':
@@ -89,17 +91,19 @@ for i, (ax, time_idx, field_name, cbar) in \
     )
 
     if cbar:
+        cbar_vals = np.linspace(contours[0], contours[-1], 5)
         add_colorbar_fig(
-            fig, cf, field_label, ax_idxs=[i], location='right'
+            fig, cf, field_label, ax_idxs=[i], location='right',
+            cbar_ticks=cbar_vals, cbar_format='.0f'
         )
 
     if i ==0:
         tomplot_field_title(
-            ax, f'Advective form, t = {time:.1f} s', minmax=True, field_data=field_data
+            ax, f'Advective transport \n',  minmax=True, field_data=field_data
         )
     else:
         tomplot_field_title(
-            ax, f'Conservative form, t = {time:.1f} s', minmax=True, field_data=field_data
+            ax, f'Conservative transport \n', minmax=True, field_data=field_data
         )
 
     # Labels -------------------------------------------------------------------

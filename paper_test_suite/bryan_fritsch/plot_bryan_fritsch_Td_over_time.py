@@ -9,20 +9,23 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig)
 import numpy as np
 
+set_tomplot_style()
+
 order = 1
 dxz = 50
 
 # For results on the previous branch, which used Td with interpolate
-results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch'
+#results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch'
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
 
 # Results in the current branch
-results_dir = ''
+#results_dir = ''
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
 plot_dir = f'{abspath(dirname(__file__))}/figures'
-plot_name = f'{plot_dir}/bryan_fritsch_linear_mX0_16x1_order_{order}_Td_solve_over_time.png'
+plot_name = f'{plot_dir}/bryan_fritsch_order_{order}_over_time.png'
 
 # Advective result:
 # Old branch:
@@ -46,7 +49,7 @@ Td_adv_diff = np.abs(Td_adv - Td_adv[0])/Td_adv[0]
 #con_dirname = f'bryan_fritsch_linear_mX0_16x1_conservative_order_{order}dxz{dxz}'
 # new branch:
 con_dirname = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_conservative_order_{order}dxz{dxz}'
-conservative_nc = Dataset(f'results/{con_dirname}/diagnostics.nc')
+conservative_nc = Dataset(f'{results_dir}results/{con_dirname}/diagnostics.nc')
 
 T_wv = conservative_nc.groups['TracerDensity_water_vapour_rho']
 Twv = T_wv['total'][:]
@@ -63,12 +66,14 @@ print('End Td diff for conservative', Td_con_diff[-1])
 fig, ax = plt.subplots(1, 1, figsize=(7, 5))
 plt.semilogy(times, Td_adv_diff, label='advective', c='r')
 plt.semilogy(times, Td_con_diff, label='tracer conservative', c='b')
-plt.xlabel('Time (s)', size = 12)
-plt.ylabel('Relative difference in Tracer Density', size=12)
+plt.xlabel('Time (s)', size = 16)
+plt.ylabel('Relative change in tracer density', size=16)
+plt.gca().ticklabel_format(axis='x',useMathText=True)
+plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
+ax.set_xlim([0,1000])
 
-plt.legend(loc = 'lower right', prop={'size': 12})
 #tomplot_legend_ax(ax, location='bottom')
 
 print(f'Saving figure to {plot_name}')
-plt.savefig(plot_name)
+plt.savefig(plot_name, bbox_inches='tight')
 plt.close()
