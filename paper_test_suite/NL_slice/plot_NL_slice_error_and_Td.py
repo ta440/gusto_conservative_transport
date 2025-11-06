@@ -9,18 +9,21 @@ from netCDF4 import Dataset
 from os.path import abspath, dirname
 from tomplot import (set_tomplot_style, plot_convergence,
                      only_minmax_ticklabels, tomplot_legend_ax,
-                     tomplot_legend_fig)
+                     tomplot_legend_fig, add_convergence_comparison_line)
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 1
+order = 0
 configuration = 'convergence'
-quantity = 'tracer_density' # tracer_density or m_X
+quantity = 'm_X' # tracer_density or m_X
 
 #Either link to current results or from previous branch
-results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
+#results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
 
-# Tracer density will be the total and m_X is the L2 of stead state error
+#extra_name = 'Tdsolve'
+extra_name_adv = 'proj_18aug_'
+extra_name_con = 'proj_18aug_'
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
@@ -54,7 +57,7 @@ for dxz in dxzs:
 
 # Make a line for the conservative transport of the mixing ratio
 for dxz in dxzs:
-    dirname = 'NL_slice_conservative_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
+    dirname = f'NL_slice_{extra_name_con}conservative_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
     nc = Dataset(f'{results_dir}/results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
@@ -83,7 +86,7 @@ for dxz in dxzs:
 
 # Make a line for the advective transport of the mixing ratio
 for dxz in dxzs:
-    dirname = 'NL_slice_advective_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
+    dirname = f'NL_slice_{extra_name_adv}advective_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
     
     nc = Dataset(f'{results_dir}/results/{dirname}/diagnostics.nc')
 
@@ -117,7 +120,6 @@ for dxz in dxzs:
 all_error_data = [advective, conservative]
 colours = ['red', 'blue']
 markers = ['s', 'o']
-labels = ['advective', 'tracer conservative']
 
 print(all_error_data)
 
@@ -127,11 +129,15 @@ if quantity == 'tracer_density':
     #ylabel = r"$T_d(T_{end}) - T_d(0)/T_d(0)$"
     ylabel = 'Mean Tracer Density Error'
     xlabel = r"$\Delta x$ (m)"
+    gradient_in_label = False
+    labels = ['advective', 'tracer conservative']
 else:
     log_by='data'
     log_base='e'
-    ylabel = "$ln(||m(T_{end}) - m(0)||/||m(0)||)$"
-    xlabel = r"$ln(\Delta x)$ (ln(m))"
+    ylabel = r"ln(Final Mixing Ratio L2 error)"
+    xlabel = r"ln$(\Delta x)$ (ln(m))"
+    gradient_in_label = True
+    labels = ['advective: ', 'tracer conservative: ']
 
 set_tomplot_style()
 fig, ax = plt.subplots(1, 1, figsize=(5, 5)) 
@@ -139,10 +145,20 @@ for error_data, colour, marker, label in \
         zip(all_error_data, colours, markers, labels):
     plot_convergence(ax, dx_values, error_data, label=label,
                      color=colour, marker=marker, log_by=log_by,
-                     log_base=log_base, gradient_in_label=False)
+                     log_base=log_base, gradient_in_label=gradient_in_label)
                      
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
+
+if quantity == 'm_X':   
+    if order == 1:
+        x_points = [20,40]
+        y_shift = 0.5
+    elif order == 0:
+        x_points = [10,20]
+        y_shift = 0.2
+    add_convergence_comparison_line(ax, 2, label=r'$(\Delta x)^2$', color='k', log_by=log_by,
+                                    x_points=x_points, y_shift=y_shift)
 
 if order == 1:  
     if quantity == 'tracer_density':

@@ -8,20 +8,20 @@ from netCDF4 import Dataset
 from os.path import abspath, dirname
 from tomplot import (set_tomplot_style, plot_convergence,
                      only_minmax_ticklabels, tomplot_legend_ax,
-                     tomplot_legend_fig)
+                     tomplot_legend_fig, add_convergence_comparison_line)
 import numpy as np
 
 order = 1
-quantity = 'tracer_density' # tracer_density or m_X
+quantity = 'm_X' # tracer_density or m_X
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
 # Older branch:
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
 #name_ext=''
-
 # Or, for current directory:
-results_dir = ''
+#results_dir = ''
 
 # For any additional components to the name:
 #name_ext = '_dt_450.0_divflow_Vu_CG1'
@@ -29,8 +29,14 @@ results_dir = ''
 # order = 0 local branch
 #name_ext = '_dt_450.0_divflow_Vu_CG1_td_solve'
 
-# order = 1 local branch
-name_ext = '_td_solve'
+# extra names
+if order == 0:
+    extra_name = 'proj_18aug_'
+    name_ext = '_dt_450.0'
+elif order == 1:
+    extra_name = ''
+    name_ext = '_td_solve'
+
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
@@ -57,7 +63,7 @@ else:
 # Make a line for the conservative transport of the mixing ratio
 print('Extracting conservative data')
 for cell_no in ncells_per_edge:
-    dirname = f'NL_sphere_conservative_order_{order}_convergence_ncells_{cell_no}{name_ext}'
+    dirname = f'NL_sphere_{extra_name}conservative_order_{order}_convergence_ncells_{cell_no}{name_ext}'
     nc = Dataset(f'{results_dir}results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
@@ -91,7 +97,7 @@ for cell_no in ncells_per_edge:
 # Make a line for the advective transport of the mixing ratio
 print('Extracting advective data')
 for cell_no in ncells_per_edge:
-    dirname = f'NL_sphere_advective_order_{order}_convergence_ncells_{cell_no}{name_ext}'
+    dirname = f'NL_sphere_{extra_name}advective_order_{order}_convergence_ncells_{cell_no}{name_ext}'
     
     nc = Dataset(f'{results_dir}results/{dirname}/diagnostics.nc')
 
@@ -126,7 +132,6 @@ for cell_no in ncells_per_edge:
 all_error_data = [advective, conservative]
 colours = ['red', 'blue']
 markers = ['s', 'o']
-labels = ['advective', 'tracer conservative']
 
 print(all_error_data)
 
@@ -139,14 +144,18 @@ if quantity == 'tracer_density':
         xlabel = r"$32/N_e$"
     else:
         xlabel = r"$48/N_e$"
+    gradient_in_label = False
+    labels = ['advective', 'tracer conservative']
 else:
     log_by = 'data'
     log_base= 'e'
     if order == 1:
-        xlabel = r"$ln(32/N_e)$"
+        xlabel = r"ln(32/$_e$)"
     else:
-        xlabel = r"$ln(48/N_e)$"
-    ylabel = "$ln(||m(T_{end}) - m(0)||/||m(0)||)$"
+        xlabel = r"ln(48/$N_e$)"
+    ylabel = r"ln(Final Mixing Ratio L2 error)"
+    gradient_in_label = True
+    labels = ['advective: ', 'tracer conservative: ']
 
 
 set_tomplot_style()
@@ -155,7 +164,17 @@ for error_data, colour, marker, label in \
         zip(all_error_data, colours, markers, labels):
     plot_convergence(ax, refinement, error_data, label=label,
                     color=colour, marker=marker, log_by=log_by,
-                    log_base=log_base, gradient_in_label=False)
+                    log_base=log_base, gradient_in_label=gradient_in_label)
+    
+if quantity == 'm_X':   
+    if order == 1:
+        x_points = [1,4]
+        y_shift = 0.5
+    elif order == 0:
+        x_points = [1,3]
+        y_shift = -0.5
+    add_convergence_comparison_line(ax, 2, label=r'$(\Delta x)^2$', color='k', log_by=log_by,
+                                    x_points=x_points, y_shift=y_shift)
                     
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
@@ -186,5 +205,5 @@ if quantity == 'tracer_density':
 # Save figure
 # ---------------------------------------------------------------------------- #
 print(f'Saving figure to {plot_name}')
-#fig.savefig(plot_name, bbox_inches='tight')
+fig.savefig(plot_name, bbox_inches='tight')
 plt.close()
