@@ -18,12 +18,17 @@ order = 1
 
 # Older branch:
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
-
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere'
 # Or, for current directory:
-results_dir = ''
+#results_dir = ''
 
 # For any additional components to the name:
-extra_name = ''
+if order == 0:
+    extra_name = '_proj_18aug'
+    name_ext = '_dt_450.0'
+elif order == 1:
+    extra_name = ''
+    name_ext = ''
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
@@ -36,8 +41,8 @@ elif order == 1:
     Ne = 32
 
 # Advective result:
-adv_dirname = f'NL_sphere_advective_order_{order}_consistency_ncells_{Ne}{extra_name}'
-nc = Dataset(f'{abspath(dirname(__file__))}/results/{adv_dirname}/diagnostics.nc')
+adv_dirname = f'NL_sphere{extra_name}_advective_order_{order}_consistency_ncells_{Ne}{name_ext}'
+nc = Dataset(f'{results_dir}/results/{adv_dirname}/diagnostics.nc')
 
 times = np.asarray(nc['time'])
 time_days = times/60/60/24
@@ -53,8 +58,8 @@ adv_mx_sse = adv_mx_sse/adv_mX0
 
 
 # Conservative result:
-con_dirname = f'NL_sphere_conservative_order_{order}_consistency_ncells_{Ne}{extra_name}'
-conservative_nc = Dataset(f'{abspath(dirname(__file__))}/results/{con_dirname}/diagnostics.nc')
+con_dirname = f'NL_sphere{extra_name}_conservative_order_{order}_consistency_ncells_{Ne}{name_ext}'
+conservative_nc = Dataset(f'{results_dir}/results/{con_dirname}/diagnostics.nc')
 
 con_mx_sse = conservative_nc.groups['m_X_error']
 con_mx_sse = con_mx_sse['l2'][:]
@@ -65,14 +70,21 @@ con_mX = con_mX['l2'][:]
 con_mX0 = con_mX[0]
 con_mx_sse = con_mx_sse/con_mX0
 
+font_opts = {'size': 14, 'family': 'serif'}
+plt.rc('font', **font_opts)
+
+
+print(f'Advective dir: {adv_dirname}')
+print(f'Conservative dir: {con_dirname}')
 
 # Plot these tracer densities
 plt.figure()
 plt.semilogy(time_days, adv_mx_sse, label='advective', c='r')
 plt.semilogy(time_days, con_mx_sse, label='tracer conservative', c='b')
-plt.xlabel('Time (days)', size=12)
-plt.ylabel('Relative mixing ratio error', size=12)
-plt.legend(loc='lower right', prop={'size': 12})
+plt.xlabel('Time (days)', size=16)
+plt.ylabel('Relative mixing ratio error', size=16)
+plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
+plt.xlim([0,12])
 
 print(f'Saving figure to {plot_name}')
 plt.savefig(plot_name, bbox_inches='tight')
