@@ -13,7 +13,7 @@ from tomplot import (set_tomplot_style, plot_convergence,
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 0
+order = 1
 configuration = 'convergence'
 quantity = 'm_X' # tracer_density or m_X
 
@@ -130,14 +130,14 @@ if quantity == 'tracer_density':
     ylabel = 'Mean Tracer Density Error'
     xlabel = r"$\Delta x$ (m)"
     gradient_in_label = False
-    labels = ['advective', 'tracer conservative']
+    labels = ['advective', 'conservative']
 else:
     log_by='data'
     log_base='e'
     ylabel = r"ln(Final Mixing Ratio L2 error)"
     xlabel = r"ln$(\Delta x)$ (ln(m))"
     gradient_in_label = True
-    labels = ['advective: ', 'tracer conservative: ']
+    labels = ['advective: ', 'conservative: ']
 
 set_tomplot_style()
 fig, ax = plt.subplots(1, 1, figsize=(5, 5)) 
