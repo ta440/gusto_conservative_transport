@@ -1,5 +1,5 @@
 # A script to plot the tracer density from the 
-# bryan fritsch bubble test
+# Bryan Fritsch bubble test
 
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
@@ -11,27 +11,26 @@ import numpy as np
 
 set_tomplot_style()
 
-order = 1
+order = 0
 dxz = 50
 
 # For results on the previous branch, which used Td with interpolate
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch'
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
+#results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
 
 # Results in the current branch
-#results_dir = ''
+results_dir = ''
+
+base_file_name = 'bryan_fritsch_linear_mX0_16x1'
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
 plot_dir = f'{abspath(dirname(__file__))}/figures'
-plot_name = f'{plot_dir}/bryan_fritsch_order_{order}_over_time.png'
+plot_name = f'{plot_dir}/bryan_fritsch_order_{order}_tracer_density.png'
 
 # Advective result:
-# Old branch:
-#adv_dirname = f'bryan_fritsch_linear_mX0_16x1_advective_order_{order}dxz{dxz}'
-# new branch:
-adv_dirname = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_advective_order_{order}dxz{dxz}'
+adv_dirname = f'{base_file_name}_advective_order_{order}dxz{dxz}'
 nc = Dataset(f'{results_dir}results/{adv_dirname}/diagnostics.nc')
 
 times = np.asarray(nc['time'])
@@ -44,11 +43,8 @@ Tcw = T_cw['total'][:]
 Td_adv = Twv + Tcw
 Td_adv_diff = np.abs(Td_adv - Td_adv[0])/Td_adv[0]
 
-# Conservative result:
-# Old branch:
-#con_dirname = f'bryan_fritsch_linear_mX0_16x1_conservative_order_{order}dxz{dxz}'
-# new branch:
-con_dirname = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_conservative_order_{order}dxz{dxz}'
+# Conservative tracer result:
+con_dirname = f'{base_file_name}_conservative_order_{order}dxz{dxz}'
 conservative_nc = Dataset(f'{results_dir}results/{con_dirname}/diagnostics.nc')
 
 T_wv = conservative_nc.groups['TracerDensity_water_vapour_rho']

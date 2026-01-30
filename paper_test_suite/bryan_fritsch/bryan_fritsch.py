@@ -15,6 +15,8 @@ This test will be run with order 0 and order 1 finite element spaces.
 The two tracers are defined in the theta space 
 and are transported conservatively.
 
+In this version, we use a linearly varying mixing ratio distribution
+to make it more difficult to ensure conservation.
 
 """
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -23,7 +25,7 @@ from firedrake import (
     PeriodicIntervalMesh, ExtrudedMesh, SpatialCoordinate, conditional, cos, pi,
     sqrt, NonlinearVariationalProblem, NonlinearVariationalSolver, TestFunction,
     dx, TrialFunction, Function, as_vector, LinearVariationalProblem,
-    LinearVariationalSolver, Constant, BrokenElement
+    LinearVariationalSolver, Constant, BrokenElement, assemble
 )
 
 from gusto import *
@@ -43,7 +45,6 @@ def moist_bryan_fritsch(
         conservative_transport=moist_bryan_fritsch_defaults['conservative_transport'],
         order=moist_bryan_fritsch_defaults['order'],
         ncolumns=moist_bryan_fritsch_defaults['ncolumns'],
-        nlayers=moist_bryan_fritsch_defaults['nlayers'],
         dt=moist_bryan_fritsch_defaults['dt'],
         tmax=moist_bryan_fritsch_defaults['tmax'],
         dumpfreq=moist_bryan_fritsch_defaults['dumpfreq']
@@ -52,13 +53,15 @@ def moist_bryan_fritsch(
     # ------------------------------------------------------------------------ #
     # Parameters for test case
     # ------------------------------------------------------------------------ #
+    nlayers = ncolumns        # Set same resolution in x and z
     domain_width = 10000.     # domain width, in m
     domain_height = 10000.    # domain height, in m
     zc = 2000.                # vertical centre of bubble, in m
     rc = 2000.                # radius of bubble, in m
     Tdash = 2.0               # strength of temperature perturbation, in K
     Tsurf = 320.0             # background theta_e value, in K
-    total_water = 0.02        # total moisture mixing ratio, in kg/kg
+    m0 = 0.02                 # Base mixing ratio, in kg/kg
+    delta_m = 0.005           # Linear variation in mixing ratio with height
 
     # ------------------------------------------------------------------------ #
     # Set up model objects
@@ -77,6 +80,7 @@ def moist_bryan_fritsch(
     )
     domain = Domain(mesh, dt, 'CG', order)
 
+
     # Set up the tracers and their transport schemes
     V_rho = domain.spaces('DG')
     V_theta = domain.spaces('theta')
@@ -92,7 +96,7 @@ def moist_bryan_fritsch(
         tracers = [WaterVapour(), CloudWater()]
 
     # Equation
-    params = CompressibleParameters()
+    params = CompressibleParameters(mesh)
     eqns = CompressibleEulerEquations(
         domain, params, active_tracers=tracers, u_transport_option=u_eqn_type
     )
@@ -105,12 +109,16 @@ def moist_bryan_fritsch(
         transport_type='advective'
         print('Not using conservative transport for the tracers')
     
-    dirname = 'bryan_fritsch_'+transport_type+'_order_'+str(order)
+    dirname = 'bryan_fritsch_linear_mX0_16x1_'+transport_type+'_order_'+str(order)+'dxz'+str(nlayers)
     
     output = OutputParameters(
         dirname=dirname, dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
     )
-    diagnostic_fields = [Theta_e(eqns)]
+    diagnostic_fields = [Theta_e(eqns), XComponent('u'), ZComponent('u'),
+                         TracerDensity('water_vapour', 'rho'),
+                         TracerDensity('cloud_water', 'rho'),
+                         Sum('water_vapour','cloud_water'),
+                         TracerDensity('water_vapour_plus_cloud_water', 'rho')]
     io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
     # Set up transport schemes
@@ -130,11 +138,11 @@ def moist_bryan_fritsch(
             suboptions = {'rho': RecoveryOptions(embedding_space=VDG1,
                                                 recovered_space=VCG1,
                                                 boundary_method=BoundaryMethod.taylor),
-                        'water_vapour': ConservativeRecoveryOptions(embedding_space=VDG1,
-                                                                    recovered_space=VCG1,
-                                                                    rho_name="rho",
-                                                                    orig_rho_space=V_rho),
-                        'cloud_water': ConservativeRecoveryOptions(embedding_space=VDG1,
+                         'water_vapour': ConservativeRecoveryOptions(embedding_space=VDG1,
+                                                                     recovered_space=VCG1,
+                                                                     rho_name="rho",
+                                                                     orig_rho_space=V_rho),
+                         'cloud_water': ConservativeRecoveryOptions(embedding_space=VDG1,
                                                                     recovered_space=VCG1,
                                                                     rho_name="rho",
                                                                     orig_rho_space=V_rho)}
@@ -151,10 +159,10 @@ def moist_bryan_fritsch(
         if conservative_transport:
             Vt_brok = FunctionSpace(mesh, BrokenElement(V_theta.ufl_element()))
             suboptions = {'rho': EmbeddedDGOptions(embedding_space=Vt_brok),
-                        'water_vapour': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
+                          'water_vapour': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
                                                                       rho_name="rho",
                                                                       orig_rho_space=V_rho),
-                        'cloud_water': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
+                          'cloud_water': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
                                                                      rho_name="rho",
                                                                      orig_rho_space=V_rho)}
         else:
@@ -182,16 +190,15 @@ def moist_bryan_fritsch(
         ["u", "rho", "theta", "water_vapour", "cloud_water"]
     ]
 
-    # Linear solver
-    linear_solver = CompressibleSolver(eqns)
-
     # Physics schemes (condensation/evaporation)
     physics_schemes = [(SaturationAdjustment(eqns), ForwardEuler(domain))]
 
     # Time stepper
+    # Use 16 outer loops, 1 inner loop, to avoid
+    # the linear solver breaking mass conservation
     stepper = SemiImplicitQuasiNewton(
         eqns, io, transported_fields, transport_methods,
-        linear_solver=linear_solver, physics_schemes=physics_schemes
+        final_physics_schemes=physics_schemes, num_outer=16, num_inner=1
     )
 
     # ------------------------------------------------------------------------ #
@@ -211,9 +218,12 @@ def moist_bryan_fritsch(
     quadrature_degree = (4, 4)
     dxp = dx(degree=(quadrature_degree))
 
-    # Define constant theta_e and water_t
+    # Define constant theta_e
     theta_e = Function(Vt).assign(Tsurf)
-    water_t = Function(Vt).assign(total_water)
+
+    # Initialise a linearly varying mixing_ratio
+    total_water = m0 - z*delta_m/domain_height
+    water_t = Function(Vt).interpolate(total_water)
 
     # Calculate hydrostatic fields
     saturated_hydrostatic_balance(eqns, stepper.fields, theta_e, water_t)
@@ -268,9 +278,7 @@ def moist_bryan_fritsch(
     water_c0.assign(water_t - water_v0)
 
     # wind initially zero
-    u0.project(as_vector(
-        [Constant(0.0, domain=mesh), Constant(0.0, domain=mesh)]
-    ))
+    u0.project(as_vector([Constant(0.0), Constant(0.0)]))
 
     stepper.set_reference_profiles(
         [
@@ -286,6 +294,7 @@ def moist_bryan_fritsch(
     # ------------------------------------------------------------------------ #
 
     stepper.run(t=0, tmax=tmax)
+
 
 # ---------------------------------------------------------------------------- #
 # MAIN
@@ -315,12 +324,6 @@ if __name__ == "__main__":
         help="The number of columns in the vertical slice mesh.",
         type=int,
         default=moist_bryan_fritsch_defaults['ncolumns']
-    )
-    parser.add_argument(
-        '--nlayers',
-        help="The number of layers for the mesh.",
-        type=int,
-        default=moist_bryan_fritsch_defaults['nlayers']
     )
     parser.add_argument(
         '--dt',

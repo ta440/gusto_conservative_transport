@@ -18,8 +18,10 @@ and are transported conservatively.
 In this version, we use a linearly varying mixing ratio distribution
 to make it more difficult to ensure conservation.
 
-Try not bothering with Embedded DG, so this is only
-for order 1 elements.
+SPECIAL DIFFERENCE in this script:
+Try not bothering with Embedded DG, so see if we still
+get mass conservation when transporting in different spaces.
+This is only for order 1 elements.
 
 """
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
