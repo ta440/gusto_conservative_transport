@@ -14,7 +14,7 @@ for both of these mixing ratios. Specifically, the mixing ratios
 will live in the theta space, with rho_d in DG.
 
 We will only use order 1 elements and colocated spaces
-to avoid needing wrappers along with he mean
+to avoid needing wrappers along with the mean
 mixing ratio augmentation for the limiting.
 """
 
@@ -114,8 +114,7 @@ def terminator_toy(
     else:
         transport_type='advective'
 
-    #dirname = 'terminator_toy_mmr_analyt_forced_'+transport_type+'_ncells_'+str(ncells_per_edge)
-    dirname = 'terminator_toy_aug1_zerocrops_and_chemlim'+transport_type+'_ncells_'+str(ncells_per_edge)
+    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -135,9 +134,6 @@ def terminator_toy(
 
     k1 = max_value(0, sin(theta)*sin(theta_cr) + cos(theta)*cos(theta_cr)*cos(lamda-lamda_cr))
     k2 = 1
-
-    #physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
-    #                    species2_name='X2_tracer'), BackwardEuler(domain))]
     
     # Set up the Terminator Toy physics.
     # The ClipZero limiter only removes very small negative values
@@ -186,8 +182,15 @@ def terminator_toy(
     if conservative_transport:
         transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
     else:
-        transport_scheme = SSPRK3(domain)
-        # Limiting if don't want to use mean mixing ratio.
+        # Use DG1 limiters with the advective scheme
+        limiter_space = domain.spaces('DG')
+        sublimiters = {
+        'rho_d': DG1Limiter(limiter_space),
+        'X_tracer': DG1Limiter(limiter_space),
+        'X2_tracer': DG1Limiter(limiter_space)
+        }
+        MixedLimiter = MixedFSLimiter(eqn, sublimiters)
+        transport_scheme = SSPRK3(domain, limiter=MixedLimiter)
 
     transport_method = [DGUpwind(eqn, 'rho_d'), DGUpwind(eqn, 'X_tracer'), DGUpwind(eqn, 'X2_tracer')]
                                         
