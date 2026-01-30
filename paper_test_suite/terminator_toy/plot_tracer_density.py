@@ -88,7 +88,7 @@ plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
 ax.set_xlim([0,12])
 
 
-plot_name = f'{plot_dir}/terminator_toy_{save_name}_Td_over_time_ncells_{ncells_per_edge}.png'
+plot_name = f'{plot_dir}/terminator_toy_{save_name}Td_over_time_ncells_{ncells_per_edge}.png'
 
 print(f'Saving figure to {plot_name}')
 plt.savefig(plot_name, bbox_inches='tight')

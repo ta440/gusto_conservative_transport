@@ -17,10 +17,7 @@ from tomplot import (
 )
 import cartopy.crs as ccrs
 
-tracer_spaces = 'same'
-prog = 'rho_d'
 ncells_per_edge = 24
-
 
 # Not with consistent projection
 #adv_extra_name = 'analyt_ref_Td_solve_'
@@ -29,12 +26,20 @@ ncells_per_edge = 24
 #con_file_name = f'/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/terminator_toy/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
 #extra_name = ''
 
-# Now with consistent projection
-adv_extra_name = 'analyt_ref_Td_solve_'
-con_extra_name = 'nov5_consistent_proj_'
-adv_file_name = f'/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/terminator_toy/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
+# Now with consistent projection, from previous directory
+#adv_extra_name = 'analyt_ref_Td_solve_'
+#con_extra_name = 'nov5_consistent_proj_'
+#adv_file_name = f'/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/terminator_toy/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
+#con_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
+#extra_name = '_nov5_consistent_proj'
+
+# From this directory:
+adv_extra_name = 'dg1_lim_'
+con_extra_name = ''
+adv_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
 con_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
-extra_name = '_nov5_consistent_proj'
+extra_name = ''
+
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots

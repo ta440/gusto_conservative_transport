@@ -16,12 +16,12 @@ from tomplot import (
     tomplot_field_title, extract_gusto_coords, extract_gusto_field
 )
 
-tracer_spaces = 'same'
-prog = 'rho_d'
 ncells_per_edge = 24
 
-adv_extra_name = 'analyt_ref_Td_solve_'
-con_extra_name = 'aug1_zerocrops_and_chemlim'
+# Solution with dg1 limiter for advective
+adv_extra_name = 'dg1_lim_'
+con_extra_name = ''
+
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
@@ -30,6 +30,7 @@ con_extra_name = 'aug1_zerocrops_and_chemlim'
 #results_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{tracer_spaces}_spaces_{scheme}_ncells_{ncells_per_edge}/field_output.nc'
 #plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all_{tracer_spaces}_spaces_{scheme}_ncells_{ncells_per_edge}'
 
+# Results from the current clone
 adv_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
 con_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
 plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all_compare_ncells_{ncells_per_edge}'

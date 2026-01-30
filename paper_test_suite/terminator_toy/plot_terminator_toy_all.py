@@ -16,11 +16,9 @@ from tomplot import (
     tomplot_field_title, extract_gusto_coords, extract_gusto_field
 )
 
-scheme = 'advective'
-tracer_spaces = 'same'
-prog = 'rho_d'
+scheme = 'conservative'
 ncells_per_edge = 24
-extra_name = 'ref_analyt_forced_test_interp'
+extra_name = '_no_phys'
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
 # ---------------------------------------------------------------------------- #
@@ -29,8 +27,8 @@ extra_name = 'ref_analyt_forced_test_interp'
 #results_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{tracer_spaces}_spaces_{scheme}_ncells_{ncells_per_edge}/field_output.nc'
 #plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all_{tracer_spaces}_spaces_{scheme}_ncells_{ncells_per_edge}'
 
-results_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{extra_name}_{scheme}_ncells_{ncells_per_edge}/field_output.nc'
-plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all_{extra_name}_{scheme}_ncells_{ncells_per_edge}'
+results_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy{extra_name}_{scheme}_ncells_{ncells_per_edge}/field_output.nc'
+plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all{extra_name}_{scheme}_ncells_{ncells_per_edge}'
 #plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_all_ref_backward_interpolate_{scheme}_ncells_{ncells_per_edge}'
 
 
