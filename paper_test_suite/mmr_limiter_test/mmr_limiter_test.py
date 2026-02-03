@@ -30,6 +30,9 @@ import numpy as np
 #limiter_type = 'standard'
 limiter_type = 'mmr'
 
+# test_type = 'Gaussian'
+#test_type = 'square'
+
 ##########################################
 # Parameters
 ncells_1d = 20
@@ -70,20 +73,20 @@ V = domain.spaces("HDiv")
 eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
 if limiter_type == 'none':
-    dirname = 'mmr_test_no_limiter'
+    dirname = f'mmr_test_no_limiter_vary_rho'
 elif limiter_type == 'standard':
-    dirname = 'mmr_test_standard_limiter'
+    dirname = f'mmr_test_standard_limiter_vary_rho'
 elif limiter_type == 'mmr':
-    dirname = 'mmr_test_mmr_limiter5'
+    dirname = f'mmr_test_mmr_limiter_vary_rho_subtract_mean'
 
 # I/O
 output = OutputParameters(
     dirname=dirname, dumpfreq=dumpfreq, dump_nc=True, dump_vtus=False
 )
 
-td = TracerDensity('m_X', 'rho_d', method='solve')
+td_X = TracerDensity('m_X', 'rho_d', method='solve')
 
-diagnostic_fields = [td, SteadyStateError('m_X')]
+diagnostic_fields = [td_X, SteadyStateError('m_X')]
 
 io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
@@ -98,7 +101,7 @@ elif limiter_type == 'standard':
 elif limiter_type == 'mmr':
     augmentation = MeanMixingRatio(domain, eqn, ['m_X'])
     transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
-
+    #transport_scheme = ForwardEuler(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
 
 # Details of transport
 transport_methods = [DGUpwind(eqn, "rho_d"), DGUpwind(eqn, "m_X")]
@@ -107,11 +110,17 @@ time_varying_velocity = False
 stepper = PrescribedTransport(
     eqn, transport_scheme, io, time_varying_velocity, transport_methods
 )
+#stepper = SplitPrescribedTransport(
+#    eqn, transport_scheme, io, time_varying_velocity, transport_methods, physics_schemes=None
+#)
 
 #u_t = u0
 #stepper.setup_prescribed_expr(u_t)
 
-rho_d_0 = Constant(1.0)
+#rho_d_0 = Constant(0.5)
+
+# Linearly varying density field
+rho_d_0 = Constant(0.5) + cos(z*pi/Lx)**2
 
 #m_X_0 = conditional((x > 40.),
 #                     conditional(x < 60.,
