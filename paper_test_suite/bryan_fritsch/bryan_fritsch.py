@@ -109,7 +109,7 @@ def moist_bryan_fritsch(
         transport_type='advective'
         print('Not using conservative transport for the tracers')
     
-    dirname = 'bryan_fritsch_linear_mX0_16x1_'+transport_type+'_order_'+str(order)+'dxz'+str(nlayers)
+    dirname = 'bryan_fritsch_feb18_2026_'+transport_type+'_order_'+str(order)+'dxz'+str(nlayers)
     
     output = OutputParameters(
         dirname=dirname, dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
@@ -132,7 +132,8 @@ def moist_bryan_fritsch(
                                  recovered_space=Vu_CG1,
                                  boundary_method=BoundaryMethod.taylor)
         theta_opts = RecoveryOptions(embedding_space=VDG1,
-                                     recovered_space=VCG1)
+                                     recovered_space=VCG1,
+                                     boundary_method=BoundaryMethod.taylor)
 
         if conservative_transport:
             suboptions = {'rho': RecoveryOptions(embedding_space=VDG1,
@@ -141,19 +142,23 @@ def moist_bryan_fritsch(
                          'water_vapour': ConservativeRecoveryOptions(embedding_space=VDG1,
                                                                      recovered_space=VCG1,
                                                                      rho_name="rho",
-                                                                     orig_rho_space=V_rho),
+                                                                     orig_rho_space=V_rho,
+                                                                     boundary_method=BoundaryMethod.taylor),
                          'cloud_water': ConservativeRecoveryOptions(embedding_space=VDG1,
                                                                     recovered_space=VCG1,
                                                                     rho_name="rho",
-                                                                    orig_rho_space=V_rho)}
+                                                                    orig_rho_space=V_rho,
+                                                                    boundary_method=BoundaryMethod.taylor)}
         else:
             rho_opts = RecoveryOptions(embedding_space=VDG1,
                                        recovered_space=VCG1,
                                        boundary_method=BoundaryMethod.taylor)
             wv_opts = RecoveryOptions(embedding_space=VDG1,
-                                      recovered_space=VCG1)
+                                      recovered_space=VCG1,
+                                      boundary_method=BoundaryMethod.taylor)
             wc_opts = RecoveryOptions(embedding_space=VDG1,
-                                      recovered_space=VCG1)
+                                      recovered_space=VCG1,
+                                      boundary_method=BoundaryMethod.taylor)
     else:
         theta_opts = EmbeddedDGOptions()
         if conservative_transport:
