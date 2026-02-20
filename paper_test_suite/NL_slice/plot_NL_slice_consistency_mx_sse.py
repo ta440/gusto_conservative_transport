@@ -35,8 +35,8 @@ if order == 0:
     dxz = 200
     #dxz = 100
 elif order == 1:
-    #dxz = 100
-    dxz = 50
+    dxz = 100
+    #dxz = 50
 
 plot_name = f'{abspath(dirname(__file__))}/figures/NL_slice_{extra_name}ord_{order}_consistency_m_l2_sse_over_time_dxz{dxz}.png'
 
@@ -80,7 +80,12 @@ plt.semilogy(times, adv_mx_sse, label='advective', c='r')
 plt.semilogy(times, con_mx_sse, label='conservative', c='b')
 plt.xlabel('Time (s)', size=16)
 plt.ylabel('Relative mixing ratio error', size=16)
+plt.xlim([0,2000])
+plt.xticks([0,500, 1000, 1500, 2000])
 plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
+plt.ylim([1e-16,1e-5])
+
+plt.grid()
 
 print(f'Saving figure to {plot_name}')
 plt.savefig(plot_name, bbox_inches='tight')

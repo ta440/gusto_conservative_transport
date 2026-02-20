@@ -69,6 +69,8 @@ for i, (ax, t_idx, title_name) in enumerate(zip(axarray.flatten(), t_idxs, title
     print(contours)
 
     cmap, lines = tomplot_cmap(contours, colour_scheme, extend_cmap='min')
+    cmap.set_under('yellow')
+    cmap.set_over('blue')
 
     # Plot data ----------------------------------------------------------------
     cf, _ = plot_contoured_field(

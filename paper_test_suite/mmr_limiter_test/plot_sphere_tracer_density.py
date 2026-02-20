@@ -55,6 +55,8 @@ ax.set_ylabel('Relative change in tracer density',size=16)
 ax.set_xlabel('Time (days)', size=16)
 plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
 ax.set_xlim([0,12])
+ax.set_ylim([1e-16,1e-11])
+plt.grid()
 
 savename = f'{figure_stem}mmr_test_sphere_tracer_density{extra_name}.jpg'
 plt.savefig(savename, bbox_inches='tight')

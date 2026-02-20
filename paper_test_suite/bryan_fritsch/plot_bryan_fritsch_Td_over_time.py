@@ -11,7 +11,7 @@ import numpy as np
 
 set_tomplot_style()
 
-order = 1
+order = 0
 dxz = 50
 
 # For results on the previous branch, which used Td with interpolate
@@ -72,6 +72,7 @@ plt.gca().ticklabel_format(axis='x',useMathText=True)
 plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
 ax.set_xlim([0,1000])
 ax.set_ylim([1e-16, 1e-5])
+plt.grid()
 
 #tomplot_legend_ax(ax, location='bottom')
 

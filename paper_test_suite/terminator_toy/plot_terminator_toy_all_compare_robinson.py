@@ -15,6 +15,9 @@ from tomplot import (
     set_tomplot_style, tomplot_cmap, plot_contoured_field, add_colorbar_fig,
     tomplot_field_title, extract_gusto_coords, extract_gusto_field
 )
+import matplotlib.ticker as mticker
+from cartopy.mpl.ticker import (LongitudeFormatter, LatitudeFormatter,
+                                LatitudeLocator)
 import cartopy.crs as ccrs
 
 ncells_per_edge = 24
@@ -34,12 +37,18 @@ ncells_per_edge = 24
 #extra_name = '_nov5_consistent_proj'
 
 # From this directory:
+#adv_extra_name = 'dg1_lim_'
+#con_extra_name = ''
+#adv_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
+#con_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
+#extra_name = ''
+
+# From this directory:
 adv_extra_name = 'dg1_lim_'
-con_extra_name = ''
+con_extra_name = 'feb3_'
 adv_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{adv_extra_name}advective_ncells_{ncells_per_edge}/field_output.nc'
 con_file_name = f'{abspath(dirname(__file__))}/results/terminator_toy_{con_extra_name}conservative_ncells_{ncells_per_edge}/field_output.nc'
-extra_name = ''
-
+extra_name = '_feb3'
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
@@ -58,16 +67,20 @@ plot_stem = f'{abspath(dirname(__file__))}/figures/terminator_toy_robinson_compa
 
 field_names = ['rho_d', 'rho_d', 'rho_d',
                'X_tracer', 'X_tracer', 'X_tracer',
-               'X2_tracer', 'X2_tracer', 'X2_tracer']
+               'X2_tracer', 'X2_tracer', 'X2_tracer',
+               'XT', 'XT', 'XT']
 time_idxs = [0, -1, -1,
+             0, -1, -1,
              0, -1, -1,
              0, -1, -1]
 cbars = [False, False, True,
          False, False, True,
+         False, False, True,
          False, False, True]
 schemes= ['adv','adv','con',
          'adv','adv','con',
-         'adv','adv','con']
+         'adv','adv','con',
+         'adv', 'adv', 'con']
 
 # ---------------------------------------------------------------------------- #
 # General options
@@ -92,6 +105,10 @@ X2_contours = np.linspace(0.0, 2.0e-6, 15)
 X2_colour_scheme = 'Greens'
 X2_field_label = r'$X_2$ (kg kg$^{-1}$)'
 
+XT_contours = np.linspace(-1e-9, 1e-9, 11)
+XT_colour_scheme = 'BrBG'
+XT_field_label = r'$X_T - X_T(0)$ (kg kg$^{-1}$)'
+
 contour_method = 'tricontour'
 xlims = [-180, 180]
 ylims = [-90, 90]
@@ -105,8 +122,8 @@ con_data_file = Dataset(con_file_name, 'r')
 # PLOTTING
 # ---------------------------------------------------------------------------- #
 subplots_x = 3
-subplots_y = 3
-fig = plt.figure(figsize=(20, 12))
+subplots_y = 4
+fig = plt.figure(figsize=(20, 16))
 
 for i, (time_idx, field_name, cbar, scheme) in \
         enumerate(zip(time_idxs, field_names, cbars, schemes)):
@@ -122,10 +139,17 @@ for i, (time_idx, field_name, cbar, scheme) in \
         time_idx = int((len(data_file['time'][:]) - 1) / 2)
 
     # Data extraction ----------------------------------------------------------
-    field_data = extract_gusto_field(data_file, field_name, time_idx=time_idx)
+    if field_name == 'XT':
+        X_data = extract_gusto_field(data_file, 'X_tracer', time_idx=time_idx)
+        X2_data = extract_gusto_field(data_file, 'X2_tracer', time_idx=time_idx)
+        field_data = X_data + X2_data + X2_data
+        coords_X, coords_Y = extract_gusto_coords(data_file, 'X_tracer')
+    else:
+        field_data = extract_gusto_field(data_file, field_name, time_idx=time_idx)
+        coords_X, coords_Y = extract_gusto_coords(data_file, field_name)
 
     print(min(field_data))
-    coords_X, coords_Y = extract_gusto_coords(data_file, field_name)
+    #coords_X, coords_Y = extract_gusto_coords(data_file, field_name)
     # Quote time in days:
     time = data_file['time'][time_idx] / (24.*60.*60.)
 
@@ -134,7 +158,7 @@ for i, (time_idx, field_name, cbar, scheme) in \
         contours = rho_contours
         colour_scheme = rho_colour_scheme
         field_label = rho_field_label
-        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=True)
+        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=False)
         cbar_labelpad = -80
         data_format = '.2e'
 
@@ -145,7 +169,7 @@ for i, (time_idx, field_name, cbar, scheme) in \
             contours = X_contours
         colour_scheme = X_colour_scheme
         field_label = X_field_label
-        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=True)
+        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=False)
         cbar_labelpad = -80
         data_format = '.2e'
 
@@ -156,7 +180,16 @@ for i, (time_idx, field_name, cbar, scheme) in \
             contours = X2_contours
         colour_scheme = X2_colour_scheme
         field_label = X2_field_label
-        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=True)
+        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=False)
+        cbar_labelpad = -80
+        data_format = '.2e'
+
+    elif field_name == 'XT':
+        field_data -= 4.0e-6
+        contours = XT_contours
+        colour_scheme = XT_colour_scheme
+        field_label = XT_field_label
+        cmap, lines = tomplot_cmap(contours, colour_scheme, remove_contour=None, extend_cmap=False)
         cbar_labelpad = -80
         data_format = '.2e'
 
@@ -174,7 +207,7 @@ for i, (time_idx, field_name, cbar, scheme) in \
     elif i == 1:
         title = f'Advective scheme, t = {time:.1f} days \n '
     elif i == 2:
-        title = f'Tracer conservative scheme, t = {time:.1f} days \n '
+        title = f'Conservative scheme, t = {time:.1f} days \n '
     else:
         title = ' '
     tomplot_field_title(
@@ -195,25 +228,35 @@ for i, (time_idx, field_name, cbar, scheme) in \
     #    ax.set_xticks(xlims)
     #    ax.set_xticklabels(xlims)
 
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='black', alpha=0.5, linestyle='-')
+    gl.top_labels = False
+    gl.left_labels = False
+    gl.xlocator = mticker.FixedLocator([-180, -90, 0, 90, 180])
+    gl.ylocator = LatitudeLocator()
+    gl.xformatter = LongitudeFormatter()
+    gl.yformatter = LatitudeFormatter()
+
 for i, (cbar, field_name) in enumerate(zip(cbars, field_names)):
 
-    cbar_labelpad = -50
+    cbar_labelpad = -30
+    cbar_padding = 0.02
     data_format = '.1e'
 
     # Get information for field
     if field_name == 'rho_d':
         field_label = rho_field_label
-
     elif field_name == 'X_tracer':
         field_label = X_field_label
-
     elif field_name == 'X2_tracer':
         field_label = X2_field_label
+    elif field_name == 'XT':
+        field_label = XT_field_label
 
     if cbar:
         add_colorbar_fig(
             fig, all_cf[i], field_label, ax_idxs=[i-1, i], location='right',
-            cbar_labelpad=cbar_labelpad, cbar_format=data_format
+            cbar_labelpad=cbar_labelpad, cbar_padding=cbar_padding, cbar_format=data_format
         )
 
 

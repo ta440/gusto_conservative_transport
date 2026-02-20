@@ -11,8 +11,7 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig)
 import numpy as np
 
-order = 1
-
+order = 0
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -80,11 +79,14 @@ print(f'Conservative dir: {con_dirname}')
 # Plot these tracer densities
 plt.figure()
 plt.semilogy(time_days, adv_mx_sse, label='advective', c='r')
-plt.semilogy(time_days, con_mx_sse, label='tracer conservative', c='b')
+plt.semilogy(time_days, con_mx_sse, label='conservative', c='b')
 plt.xlabel('Time (days)', size=16)
 plt.ylabel('Relative mixing ratio error', size=16)
 plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
 plt.xlim([0,12])
+plt.ylim([1e-16,1e-11])
+plt.grid()
+
 
 print(f'Saving figure to {plot_name}')
 plt.savefig(plot_name, bbox_inches='tight')

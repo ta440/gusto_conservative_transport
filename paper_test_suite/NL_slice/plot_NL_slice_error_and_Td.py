@@ -13,17 +13,21 @@ from tomplot import (set_tomplot_style, plot_convergence,
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 1
+order = 0
 configuration = 'convergence'
-quantity = 'm_X' # tracer_density or m_X
+quantity = 'tracer_density' # tracer_density or m_X
 
 #Either link to current results or from previous branch
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
 
-#extra_name = 'Tdsolve'
+results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
 extra_name_adv = 'proj_18aug_'
 extra_name_con = 'proj_18aug_'
+
+# Results from the current directory
+#results_dir = f'{abspath(dirname(__file__))}'
+#extra_name_adv = ''
+#extra_name_con = ''
 
 # ---------------------------------------------------------------------------- #
 # Directory for results and plots
@@ -170,7 +174,7 @@ if order == 1:
 else:  
     if quantity == 'tracer_density':
         ax.set_xlim([9.5, 20.5])
-        ax.set_ylim([1e-13,1e-4])
+        ax.set_ylim([1e-14,1e-4])
         #plt.gca().xaxis.set_minor_formatter(ScalarFormatter())
         #plt.gca().xaxis.set_major_formatter(ScalarFormatter())
         #plt.xticks([],minor=False)
@@ -178,6 +182,7 @@ else:
         plt.gca().axes.xaxis.set_ticks([10,12,14,16,18,20])
         plt.gca().axes.xaxis.set_ticklabels([10,12,14,16,18,20])
         plt.gca().xaxis.set_minor_locator(NullLocator())
+
 
 tomplot_legend_ax(ax, location='bottom')
 

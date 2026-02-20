@@ -11,8 +11,9 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig, add_convergence_comparison_line)
 import numpy as np
 
-order = 1
-quantity = 'm_X' # tracer_density or m_X
+order = 0
+quantity = 'tracer_density'
+#quantity = 'm_X'
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
@@ -49,16 +50,17 @@ else:
 conservative = []
 advective = []
 
-# Spatial resolutions.
-# Order 1 can be twice as coarse as order 0.
+# Spatial resolutions
 if order == 1:
     ncells_per_edge = [8,16,24,32]
-    #refinement = ncells_per_edge
-    refinement = [32/val for val in ncells_per_edge]
+    #refinement = [32/val for val in ncells_per_edge]
 else:
-    #ncells_per_edge = [36,48]
+    #refinement = [48/val for val in ncells_per_edge]
     ncells_per_edge = [16,24,36,48]
-    refinement = [48/val for val in ncells_per_edge]
+
+R = 6371220. 
+refinement = [np.pi*R/(2*Ne)/1000 for Ne in ncells_per_edge]
+print(refinement)
 
 # Make a line for the conservative transport of the mixing ratio
 print('Extracting conservative data')
@@ -141,21 +143,21 @@ if quantity == 'tracer_density':
     #ylabel = r"$T_d(T_{end}) - T_d(0)/T_d(0)$"
     ylabel = 'Mean Tracer Density Error'
     if order == 1:
-        xlabel = r"$32/N_e$"
+        xlabel = r"$\Delta x$ (km)"
     else:
-        xlabel = r"$48/N_e$"
+        xlabel = r"$\Delta x$ (km)"
     gradient_in_label = False
-    labels = ['advective', 'tracer conservative']
+    labels = ['advective', 'conservative']
 else:
     log_by = 'data'
     log_base= 'e'
     if order == 1:
-        xlabel = r"ln(32/$_e$)"
+        xlabel = r"ln($\Delta x$) (ln(km))"
     else:
-        xlabel = r"ln(48/$N_e$)"
+        xlabel = r"ln($\Delta x$) (ln(km))"
     ylabel = r"ln(Final Mixing Ratio L2 error)"
     gradient_in_label = True
-    labels = ['advective: ', 'tracer conservative: ']
+    labels = ['advective: ', 'conservative: ']
 
 
 set_tomplot_style()
@@ -168,13 +170,13 @@ for error_data, colour, marker, label in \
     
 if quantity == 'm_X':   
     if order == 1:
-        x_points = [1,4]
+        x_points = None#[10,14]
         y_shift = 0.5
     elif order == 0:
-        x_points = [1,3]
-        y_shift = -0.5
+        x_points = None#[1,3]
+        y_shift = 0.5
     add_convergence_comparison_line(ax, 2, label=r'$(\Delta x)^2$', color='k', log_by=log_by,
-                                    x_points=x_points, y_shift=y_shift)
+                                   x_points=x_points, y_shift=y_shift)
                     
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
@@ -187,19 +189,32 @@ tomplot_legend_ax(ax, location='bottom')
 
 plt.grid()
 
+
 if quantity == 'tracer_density':
     old_xticklabels = ax.get_xticklabels()
 
-    # Set most tick labels to be an empty string
+    # Set most tick labels to be an empty string#
     new_xticklabels = ['' for _ in old_xticklabels]
+    print(new_xticklabels)
 
+    ax.set_xticks([])
     ax.set_xticklabels([])
-    #ax.set_xticklabels(new_xticklabels)
+    #ax.set_xticks([])
 
-    xtick_labels = [np.round(val,2) for val in refinement]
-    #print(xtick_labels)
-    xticks = [np.round(val,2) for val in refinement]
-    ax.set_xticks(xticks, xtick_labels)
+    if order == 1:
+        ax.minorticks_off()
+        xtick_labels = [300, 600, 900, 1200]
+        xticks = [300, 600, 900, 1200]
+    else:
+        xtick_labels = [200, 300, 400, 500, 600]
+        xticks = [200, 300, 400, 500, 600]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xtick_labels)
+
+    ax.set_ylim([1e-16,1e-3])
+
+    #ax.xaxis.set_minor_formatter(plt.NullFormatter())
+
 
 # ---------------------------------------------------------------------------- #
 # Save figure
