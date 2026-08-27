@@ -145,8 +145,9 @@ def NL_slice(
     if order == 0:
         # Specify recovery options for both tracers
         VCG1 = FunctionSpace(mesh, 'CG', 1)
-        VDG1 = domain.spaces('DG1_equispaced')    
-    
+        VDG1 = domain.spaces('DG1_equispaced')
+        V_transport = VDG1
+
         if conservative_transport:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
                                                    recovered_space=VCG1,
@@ -175,7 +176,8 @@ def NL_slice(
         # Use Recovery for rho_d so that both variables
         # use the same embedding and recovered spaces.
         Vt_brok = FunctionSpace(mesh, BrokenElement(V_m_X.ufl_element()))
-        
+        V_transport = Vt_brok
+
         if conservative_transport:
             suboptions = {'rho_d': EmbeddedDGOptions(embedding_space=Vt_brok),
                           'm_X': ConservativeEmbeddedDGOptions(project_back_method='conservative_project',
@@ -193,7 +195,10 @@ def NL_slice(
     opts = MixedFSOptions(suboptions=suboptions)
     
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor)
+        solver_parameters = conservative_tracer_parameters(V_transport, num_fields=2)
+
+        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
+                                  solver_parameters=solver_parameters)
     else:
         transport_scheme = SSPRK3(domain, options=opts)
     
