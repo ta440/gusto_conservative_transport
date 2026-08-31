@@ -180,7 +180,10 @@ def terminator_toy(
     augmentation = MeanMixingRatio(domain, eqn, ['X_tracer', 'X2_tracer'])
 
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
+        solver_parameters = conservative_tracer_parameters(V_rho, num_fields=2)
+
+        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
+                                  solver_parameters=solver_parameters, augmentation=augmentation)
     else:
         # Use DG1 limiters with the advective scheme
         limiter_space = domain.spaces('DG')
