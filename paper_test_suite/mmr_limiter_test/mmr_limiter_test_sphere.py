@@ -121,7 +121,7 @@ tau = tmax
 def u_t(t):
     k = 5.*radius/tau
     u_background = 2*pi*radius/tau
-    lamda_prime = lamda - u_background*t
+    lamda_prime = lamda - 2*np.pi*t/tau
 
     u_zonal = (
         u_background*cos(theta)

@@ -114,7 +114,7 @@ def terminator_toy(
     else:
         transport_type='advective'
 
-    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)
+    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)+'test2'
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -168,18 +168,18 @@ def terminator_toy(
 
     def u_t(t):
         k = 10*radius/tau
+        lamda_prime = lamda - 2*pi*t/tau
 
         u_zonal = (
-            k*(sin(lamda - 2*pi*t/tau)**2)*sin(2*theta)*cos(pi*t/tau)
+            k*(sin(lamda_prime)**2)*sin(2*theta)*cos(pi*t/tau)
             + ((2*pi*radius)/tau)*cos(theta)
         )
-        u_merid = k*sin(2*(lamda - 2*pi*t/tau))*cos(theta)*cos(pi*t/tau)
+        u_merid = k*sin(2*(lamda_prime))*cos(theta)*cos(pi*t/tau)
 
         return xyz_vector_from_lonlatr(u_zonal, u_merid, Constant(0.0), xyz)
 
-    augmentation = MeanMixingRatio(domain, eqn, ['X_tracer', 'X2_tracer'])
-
     if conservative_transport:
+        augmentation = MeanMixingRatio(domain, eqn, ['X_tracer', 'X2_tracer'])
         transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
     else:
         # Use DG1 limiters with the advective scheme
