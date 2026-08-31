@@ -136,6 +136,7 @@ def moist_bryan_fritsch(
                                      boundary_method=BoundaryMethod.taylor)
 
         if conservative_transport:
+            V_transport = VDG1
             suboptions = {'rho': RecoveryOptions(embedding_space=VDG1,
                                                 recovered_space=VCG1,
                                                 boundary_method=BoundaryMethod.taylor),
@@ -163,6 +164,7 @@ def moist_bryan_fritsch(
         theta_opts = EmbeddedDGOptions()
         if conservative_transport:
             Vt_brok = FunctionSpace(mesh, BrokenElement(V_theta.ufl_element()))
+            V_transport = Vt_brok
             suboptions = {'rho': EmbeddedDGOptions(embedding_space=Vt_brok),
                           'water_vapour': ConservativeEmbeddedDGOptions(embedding_space=Vt_brok,
                                                                       rho_name="rho",
@@ -176,10 +178,14 @@ def moist_bryan_fritsch(
             wc_opts = EmbeddedDGOptions()
 
     transported_fields = [SSPRK3(domain, "theta", options=theta_opts)]
-    
+
     if conservative_transport:
         mixed_opts = MixedFSOptions(suboptions=suboptions)
-        transported_fields.append(SSPRK3(domain, ["rho", "water_vapour", "cloud_water"], options=mixed_opts, rk_formulation=RungeKuttaFormulation.predictor))
+        solver_parameters = conservative_tracer_parameters(V_transport, num_fields=3)
+        transported_fields.append(SSPRK3(domain, ["rho", "water_vapour", "cloud_water"],
+                                         options=mixed_opts,
+                                         rk_formulation=RungeKuttaFormulation.predictor,
+                                         solver_parameters=solver_parameters))
     else:
         transported_fields.append(SSPRK3(domain, 'rho', options=rho_opts))
         transported_fields.append(SSPRK3(domain, 'water_vapour', options=wv_opts))

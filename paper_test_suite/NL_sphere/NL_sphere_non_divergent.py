@@ -135,11 +135,13 @@ def NL_sphere(
 
     if order == 1:
         suboptions = {}
+        V_transport = domain.spaces(tracer_space)
+
     elif order == 0:
         VCG1 = FunctionSpace(mesh, 'CG', 1)
-        #VDG1 = domain.spaces('DG1_equispaced')    
-        VDG1 = domain.spaces('DG1_equispaced')    
-    
+        VDG1 = domain.spaces('DG1_equispaced')
+        V_transport = VDG1
+
         if conservative_transport:
             suboptions = {'rho_d': RecoveryOptions(embedding_space=VDG1,
                                                    recovered_space=VCG1,
@@ -166,7 +168,10 @@ def NL_sphere(
     opts = MixedFSOptions(suboptions=suboptions)
 
     if conservative_transport:
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor)
+        solver_parameters = conservative_tracer_parameters(V_transport, num_fields=2)
+
+        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
+                                  solver_parameters=solver_parameters)
     else:
         transport_scheme = SSPRK3(domain, options=opts)
 

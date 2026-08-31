@@ -91,17 +91,22 @@ diagnostic_fields = [td_X, SteadyStateError('m_X')]
 io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
 
+solver_parameters = conservative_tracer_parameters(V_tracer, num_fields=2)
+
 if limiter_type == 'none':
-    transport_scheme = SSPRK3(domain, rk_formulation=RungeKuttaFormulation.predictor)
+    transport_scheme = SSPRK3(domain, rk_formulation=RungeKuttaFormulation.predictor,
+                              solver_parameters=solver_parameters)
 elif limiter_type == 'standard':
     sublimiters = {'m_X': DG1Limiter(V_tracer), 
                    'rho_d': DG1Limiter(V_tracer)}
     MixedLimiter = MixedFSLimiter(eqn, sublimiters)
-    transport_scheme = SSPRK3(domain, rk_formulation=RungeKuttaFormulation.predictor, limiter=MixedLimiter)
+    transport_scheme = SSPRK3(domain, rk_formulation=RungeKuttaFormulation.predictor,
+                              limiter=MixedLimiter, solver_parameters=solver_parameters)
 elif limiter_type == 'mmr':
     augmentation = MeanMixingRatio(domain, eqn, ['m_X'])
-    transport_scheme = SSPRK3(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
-    #transport_scheme = ForwardEuler(domain, augmentation=augmentation, rk_formulation=RungeKuttaFormulation.predictor)
+    transport_scheme = SSPRK3(domain, augmentation=augmentation,
+                              rk_formulation=RungeKuttaFormulation.predictor,
+                              solver_parameters=solver_parameters)
 
 # Details of transport
 transport_methods = [DGUpwind(eqn, "rho_d"), DGUpwind(eqn, "m_X")]
