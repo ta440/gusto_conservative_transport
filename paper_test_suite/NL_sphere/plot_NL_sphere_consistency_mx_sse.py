@@ -11,15 +11,15 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig)
 import numpy as np
 
-order = 0
+order = 1
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
 # Older branch:
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere'
+#results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere'
 # Or, for current directory:
-#results_dir = ''
+results_dir = f'{abspath(dirname(__file__))}'
 
 # For any additional components to the name:
 if order == 0:
@@ -81,10 +81,11 @@ plt.figure()
 plt.semilogy(time_days, adv_mx_sse, label='advective', c='r')
 plt.semilogy(time_days, con_mx_sse, label='conservative', c='b')
 plt.xlabel('Time (days)', size=16)
-plt.ylabel('Relative mixing ratio error', size=16)
+#plt.ylabel('Relative mixing ratio error', size=16)
+plt.ylabel(r"$||m(t) - m(0)||_2/||m(0)||_2$", size=16)
 plt.legend(loc='lower center', prop={'size': 16}, bbox_to_anchor=(0.5, -0.4))
 plt.xlim([0,12])
-plt.ylim([1e-16,1e-11])
+plt.ylim([1e-16,1e-14])
 plt.grid()
 
 

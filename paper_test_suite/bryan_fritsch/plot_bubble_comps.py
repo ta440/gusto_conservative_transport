@@ -14,12 +14,16 @@ from tomplot import (
     extract_gusto_field
 )
 
-order = 0
+order = 1
 
-test1 = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_advective_order_{order}dxz50'
-test2 = f'bryan_fritsch_linear_mX0_16x1_Tdsolve_conservative_order_{order}dxz50'
+test1 = f'bryan_fritsch_linear_mX0_16x1_advective_order_{order}dxz50'
+test2 = f'bryan_fritsch_linear_mX0_16x1_conservative_order_{order}dxz50'
 
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
+# If need to reference to another version:
+results_dir = '/data/home/ta440/firedrake_pip_29_1_26/gusto/gusto_conservative_transport/paper_test_suite/bryan_fritsch/'
+
+# This version of firedrake:
+#results_dir = f'{abspath(dirname(__file__))}/'
 
 results_file_name1 = f'{results_dir}results/{test1}/field_output.nc'
 results_file_name2 = f'{results_dir}results/{test2}/field_output.nc'
@@ -45,7 +49,8 @@ if field == 'theta':
 elif field == 'rho':
     contours = np.linspace(0.4,1.2,21)
 elif field == 'Theta_e':
-    contours = np.linspace(317.0, 326.0, 9)
+    #contours = np.linspace(317.0, 326.0, 9)
+    contours = np.linspace(318.0, 326.0, 8)
 elif field == 'cloud_water':
     contours = np.linspace(0.01,0.02,21)
 elif field == 'water_vapour':
@@ -91,7 +96,7 @@ for i, (ax, time_idx, field_name, cbar) in \
     )
 
     if cbar:
-        cbar_vals = np.linspace(contours[0], contours[-1], 5)
+        cbar_vals = np.linspace(contours[0], contours[-1], 3)
         add_colorbar_fig(
             fig, cf, field_label, ax_idxs=[i], location='right',
             cbar_ticks=cbar_vals, cbar_format='.0f'
@@ -123,5 +128,5 @@ for i, (ax, time_idx, field_name, cbar) in \
 plot_name= f'{plot_dir}/bubble_comp_order'+str(order)+'_t'+str(time)+'s_'+field+'.png'
 fig.subplots_adjust(wspace=0.15)
 print(f'Saving figure to {plot_name}')
-fig.savefig(plot_name, bbox_inches='tight')
+fig.savefig(plot_name, dpi=500, bbox_inches='tight')
 plt.close()

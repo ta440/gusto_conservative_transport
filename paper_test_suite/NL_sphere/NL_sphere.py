@@ -165,10 +165,20 @@ def NL_sphere(
     opts = MixedFSOptions(suboptions=suboptions)
 
     if conservative_transport:
-        solver_parameters = conservative_tracer_parameters(V_transport, num_fields=2)
-
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
-                                  solver_parameters=solver_parameters)
+        linear_parameters = {
+            "mat_type": "aij",
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "ksp_error_if_not_converged": None,
+        }
+        transport_scheme = SequentialConservativeSSPRK3(
+            domain,
+            options=opts,
+            density_index=0,
+            tracer_indices=(1,),
+            density_solver_parameters=linear_parameters,
+            tracer_solver_parameters=linear_parameters,
+        )
     else:
         transport_scheme = SSPRK3(domain, options=opts)
 

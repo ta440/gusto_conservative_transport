@@ -11,18 +11,15 @@ from tomplot import (set_tomplot_style, plot_convergence,
                      tomplot_legend_fig, add_convergence_comparison_line)
 import numpy as np
 
-order = 0
-quantity = 'tracer_density'
-#quantity = 'm_X'
+order = 1
+#quantity = 'tracer_density'
+quantity = 'm_X'
 
 # Tracer density will be the total and m_X is the L2 of stead state error
 
 # Older branch:
-#results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
-#name_ext=''
-# Or, for current directory:
-#results_dir = ''
+adv_results_dir = '/data/home/ta440/firedrake_pip_29_1_26/gusto/gusto_conservative_transport/paper_test_suite/NL_sphere/'
+con_results_dir = ''
 
 # For any additional components to the name:
 #name_ext = '_dt_450.0_divflow_Vu_CG1'
@@ -36,7 +33,8 @@ if order == 0:
     name_ext = '_dt_450.0'
 elif order == 1:
     extra_name = ''
-    name_ext = '_td_solve'
+    adv_name_ext = ''
+    con_name_ext=''
 
 
 # ---------------------------------------------------------------------------- #
@@ -52,7 +50,7 @@ advective = []
 
 # Spatial resolutions
 if order == 1:
-    ncells_per_edge = [8,16,24,32]
+    ncells_per_edge = [16,24,32,48]
     #refinement = [32/val for val in ncells_per_edge]
 else:
     #refinement = [48/val for val in ncells_per_edge]
@@ -65,8 +63,8 @@ print(refinement)
 # Make a line for the conservative transport of the mixing ratio
 print('Extracting conservative data')
 for cell_no in ncells_per_edge:
-    dirname = f'NL_sphere_{extra_name}conservative_order_{order}_convergence_ncells_{cell_no}{name_ext}'
-    nc = Dataset(f'{results_dir}results/{dirname}/diagnostics.nc')
+    dirname = f'NL_sphere_{extra_name}conservative_order_{order}_convergence_ncells_{cell_no}{con_name_ext}'
+    nc = Dataset(f'{con_results_dir}results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
     # Extract the tracer density:
@@ -99,9 +97,9 @@ for cell_no in ncells_per_edge:
 # Make a line for the advective transport of the mixing ratio
 print('Extracting advective data')
 for cell_no in ncells_per_edge:
-    dirname = f'NL_sphere_{extra_name}advective_order_{order}_convergence_ncells_{cell_no}{name_ext}'
+    dirname = f'NL_sphere_{extra_name}advective_order_{order}_convergence_ncells_{cell_no}{adv_name_ext}'
     
-    nc = Dataset(f'{results_dir}results/{dirname}/diagnostics.nc')
+    nc = Dataset(f'{adv_results_dir}results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
     # Extract the tracer density:
@@ -141,7 +139,8 @@ if quantity == 'tracer_density':
     log_by = 'axes'
     log_base = 10
     #ylabel = r"$T_d(T_{end}) - T_d(0)/T_d(0)$"
-    ylabel = 'Mean Tracer Density Error'
+    ylabel = r"$\overline{\Delta M}$"
+    #ylabel = 'Mean Tracer Density Error'
     if order == 1:
         xlabel = r"$\Delta x$ (km)"
     else:
@@ -155,9 +154,11 @@ else:
         xlabel = r"ln($\Delta x$) (ln(km))"
     else:
         xlabel = r"ln($\Delta x$) (ln(km))"
-    ylabel = r"ln(Final Mixing Ratio L2 error)"
+    ylabel = r"ln($||m(T_{end}) - m(0)||_2/||m(0)||_2$)"
+    #ylabel = r"ln(Final Mixing Ratio L2 error)"
     gradient_in_label = True
     labels = ['advective: ', 'conservative: ']
+
 
 
 set_tomplot_style()
@@ -203,8 +204,10 @@ if quantity == 'tracer_density':
 
     if order == 1:
         ax.minorticks_off()
-        xtick_labels = [300, 600, 900, 1200]
-        xticks = [300, 600, 900, 1200]
+        #xtick_labels = [300, 600, 900, 1200]
+        #xticks = [300, 600, 900, 1200]
+        xtick_labels = [200, 300, 400, 500, 600, 700]
+        xticks = [200, 300, 400, 500, 600, 700]
     else:
         xtick_labels = [200, 300, 400, 500, 600]
         xticks = [200, 300, 400, 500, 600]
@@ -220,5 +223,5 @@ if quantity == 'tracer_density':
 # Save figure
 # ---------------------------------------------------------------------------- #
 print(f'Saving figure to {plot_name}')
-fig.savefig(plot_name, bbox_inches='tight')
+fig.savefig(plot_name, dpi=500, bbox_inches='tight')
 plt.close()
