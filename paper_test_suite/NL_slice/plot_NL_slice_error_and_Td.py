@@ -13,16 +13,19 @@ from tomplot import (set_tomplot_style, plot_convergence,
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullLocator
 
-order = 0
+order = 1
 configuration = 'convergence'
-quantity = 'tracer_density' # tracer_density or m_X
+#quantity = 'tracer_density' # tracer_density or m_X
+quantity = 'm_X'
 
 #Either link to current results or from previous branch
 #results_dir = '/data/home/ta440/firedrake_07_03_24/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
 
-results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
+adv_results_dir = '/data/home/ta440/firedrake_pip_19062025/src/gusto/gusto_conservative_transport/paper_test_suite/NL_slice'
 extra_name_adv = 'proj_18aug_'
-extra_name_con = 'proj_18aug_'
+
+con_results_dir = f'{abspath(dirname(__file__))}'
+extra_name_con = ''
 
 # Results from the current directory
 #results_dir = f'{abspath(dirname(__file__))}'
@@ -62,7 +65,7 @@ for dxz in dxzs:
 # Make a line for the conservative transport of the mixing ratio
 for dxz in dxzs:
     dirname = f'NL_slice_{extra_name_con}conservative_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
-    nc = Dataset(f'{results_dir}/results/{dirname}/diagnostics.nc')
+    nc = Dataset(f'{con_results_dir}/results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
     # Extract the tracer density:
@@ -92,7 +95,7 @@ for dxz in dxzs:
 for dxz in dxzs:
     dirname = f'NL_slice_{extra_name_adv}advective_order_'+str(order)+'_'+configuration+'_dxz_'+str(dxz)
     
-    nc = Dataset(f'{results_dir}/results/{dirname}/diagnostics.nc')
+    nc = Dataset(f'{adv_results_dir}/results/{dirname}/diagnostics.nc')
 
     if quantity == 'tracer_density':
     # Extract the tracer density:
@@ -131,17 +134,19 @@ if quantity == 'tracer_density':
     log_by = 'axes'
     log_base = 10
     #ylabel = r"$T_d(T_{end}) - T_d(0)/T_d(0)$"
-    ylabel = 'Mean Tracer Density Error'
+    ylabel = r"$\overline{\Delta M}$"
     xlabel = r"$\Delta x$ (m)"
     gradient_in_label = False
     labels = ['advective', 'conservative']
 else:
     log_by='data'
     log_base='e'
-    ylabel = r"ln(Final Mixing Ratio L2 error)"
+    #ylabel = r"ln(Final Mixing Ratio L2 error)"
+    ylabel = r"ln($||m(T_{end}) - m(0)||_2/||m(0)||_2$)"
     xlabel = r"ln$(\Delta x)$ (ln(m))"
     gradient_in_label = True
     labels = ['advective: ', 'conservative: ']
+
 
 set_tomplot_style()
 fig, ax = plt.subplots(1, 1, figsize=(5, 5)) 
@@ -191,5 +196,5 @@ plt.grid()
 # Save figure
 # ---------------------------------------------------------------------------- #
 print(f'Saving figure to {plot_name}')
-fig.savefig(plot_name, bbox_inches='tight')
+fig.savefig(plot_name, dpi=500, bbox_inches='tight')
 plt.close()

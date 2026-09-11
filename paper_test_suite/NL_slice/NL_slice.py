@@ -194,10 +194,42 @@ def NL_slice(
     opts = MixedFSOptions(suboptions=suboptions)
     
     if conservative_transport:
-        solver_parameters = conservative_tracer_parameters(V_transport, num_fields=2)
+        linear_parameters = {
+            "mat_type": "aij",
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "ksp_error_if_not_converged": None,
+        }
+        linear_debug_parameters = {
+            "mat_type": "aij",
 
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
-                                  solver_parameters=solver_parameters)
+            # Firedrake's LinearVariationalSolver may internally use SNES as a
+            # wrapper. KSPONLY guarantees that SNES performs no Newton iterations.
+            "snes_type": "ksponly",
+
+            # Apply the direct factorization once.
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+
+            "snes_error_if_not_converged": None,
+            "ksp_error_if_not_converged": None,
+
+            # Diagnostic output.
+            "snes_monitor": None,
+            "snes_converged_reason": None,
+            "ksp_monitor_true_residual": None,
+            "ksp_converged_reason": None,
+            "snes_view": None,
+            "ksp_view": None,
+        }
+        transport_scheme = SequentialConservativeSSPRK3(
+            domain,
+            options=opts,
+            density_index=0,
+            tracer_indices=(1,),
+            density_solver_parameters=linear_debug_parameters,
+            tracer_solver_parameters=linear_debug_parameters,
+        )
     else:
         transport_scheme = SSPRK3(domain, options=opts)
     
