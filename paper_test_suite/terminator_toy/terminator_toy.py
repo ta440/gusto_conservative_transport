@@ -110,11 +110,12 @@ def terminator_toy(
     eqn = CoupledTransportEquation(domain, active_tracers=tracers, Vu = V)
 
     if conservative_transport:
-        transport_type='conservative'
+        #transport_type='conservative'
+        transport_type='conservative_monotonic_no_prelim'
     else:
         transport_type='advective'
 
-    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)+'test2'
+    dirname = 'terminator_toy_'+transport_type+'_ncells_'+str(ncells_per_edge)
 
     # Set dump_nc = True to use tomplot.
     output = OutputParameters(dirname=dirname,
@@ -147,7 +148,7 @@ def terminator_toy(
     
     physics_schemes = [(TerminatorToy(eqn, k1=k1, k2=k2, species1_name='X_tracer',
                         species2_name='X2_tracer', analytical_formulation=True), 
-                        ForwardEuler(domain, limiter=mixed_phys_limiter))]
+                        ForwardEuler(domain, limiter=None))]
 
     X, Y, Z = xyz
     X1, Y1, Z1 = xyz_from_lonlatr(lamda_c1, theta_c1, radius)
@@ -179,11 +180,25 @@ def terminator_toy(
         return xyz_vector_from_lonlatr(u_zonal, u_merid, Constant(0.0), xyz)
 
     if conservative_transport:
-        solver_parameters = conservative_tracer_parameters(V_rho, num_fields=2)
 
         augmentation = MeanMixingRatio(domain, eqn, ['X_tracer', 'X2_tracer'])
-        transport_scheme = SSPRK3(domain, options=opts, rk_formulation=RungeKuttaFormulation.predictor,
-                                  solver_parameters=solver_parameters, augmentation=augmentation)
+
+        linear_parameters = {
+            "mat_type": "aij",
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "ksp_error_if_not_converged": None,
+        }
+
+        transport_scheme = SequentialConservativeSSPRK3(
+            domain,
+            augmentation=augmentation,
+            density_index=0,
+            tracer_indices=(1, 2),
+            density_solver_parameters=linear_parameters,
+            tracer_solver_parameters=linear_parameters,
+        )
+
     else:
         # Use DG1 limiters with the advective scheme
         limiter_space = domain.spaces('DG')
@@ -207,8 +222,22 @@ def terminator_toy(
 
     # Initial conditions
     stepper.fields("rho_d").interpolate(rho_expr)
-    stepper.fields("X_tracer").interpolate(X_0)
-    stepper.fields("X2_tracer").interpolate(X2_0)
+
+    # What about intialising via DG1 equispaced?
+    cell = mesh.ufl_cell().cellname
+    DG1_element = FiniteElement("DG", cell, 1, variant="equispaced")
+    DG1_equispaced = FunctionSpace(mesh, DG1_element)
+
+    X_eq = Function(DG1_equispaced)
+    X_eq.interpolate(X_0)
+    stepper.fields("X_tracer").project(X_eq)
+
+    X2_eq = Function(DG1_equispaced)
+    X2_eq.interpolate(X2_0)
+    stepper.fields("X2_tracer").project(X2_eq)
+
+    #stepper.fields("X_tracer").interpolate(X_0)
+    #stepper.fields("X2_tracer").interpolate(X2_0)
 
     # Run until Termination!
     stepper.run(t=0, tmax=tmax)
